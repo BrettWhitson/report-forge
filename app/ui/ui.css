@@ -33,8 +33,7 @@ main { flex: 1; display: flex; min-height: 0; margin: 8px 14px; gap: 8px; }
 #record-list .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #record-list .count { color: var(--muted); font-size: 12px; }
 #record-list .warn { color: var(--warn); font-weight: 700; }
-.preview-pane { flex: 1; overflow: auto; background: #8a8d99; border-radius: 6px; padding: 12px; }
-#preview { display: block; width: 816px; border: 0; background: #fff; transform-origin: top left; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+.preview-pane { flex: 1; background: #8a8d99; border-radius: 6px; }
 dialog { border: 1px solid var(--line); border-radius: 8px; min-width: 360px; }
 dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 12px 0 0; }
 dialog label { display: flex; flex-direction: column; gap: 4px; }

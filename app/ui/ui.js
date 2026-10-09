@@ -4,7 +4,6 @@ const $ = (sel) => document.querySelector(sel);
 let status = null;
 let active = null;
 const checked = new Set();
-let lastOutput = null;
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
@@ -84,7 +83,7 @@ function renderMapping() {
 }
 
 async function changeMapping(field, header) {
-  const next = await run(() => rf.setMapping({ ...status.mapping, [field]: header }));
+  const next = await run(() => rf.setMapping({ [field]: header }));
   if (next) { status = next; render(); refreshPreview(); }
 }
 
@@ -111,19 +110,14 @@ async function refreshPreview() {
   if (!status || !status.template) return;
   const index = status.records.some((r) => r.index === active) ? active : (status.records[0] ? status.records[0].index : null);
   active = index;
-  const url = await run(() => rf.previewUrl(index));
-  if (url) $('#preview').src = url;
+  await run(() => rf.showPreview(index));
 }
 
-function fitPreview() {
-  const pane = $('#preview-pane');
-  const frame = $('#preview');
-  const scale = Math.min(1, (pane.clientWidth - 24) / 816);
-  frame.style.transform = `scale(${scale})`;
-  let height = 1056;
-  try { height = frame.contentDocument.documentElement.scrollHeight; } catch { /* cross-origin: keep one page */ }
-  frame.style.height = `${height}px`;
-  frame.style.marginBottom = `${height * (scale - 1)}px`;
+// The preview is a separate native view layered over #preview-pane; keep it aligned and hide it under dialogs.
+function syncPreviewBounds() {
+  const r = $('#preview-pane').getBoundingClientRect();
+  const dialogOpen = [...document.querySelectorAll('dialog')].some((d) => d.open);
+  rf.setPreviewBounds({ x: r.left, y: r.top, width: r.width, height: r.height }, !dialogOpen).catch(() => {});
 }
 
 async function refresh() {
@@ -146,7 +140,6 @@ async function doGenerate(indices) {
   progress.hidden = true;
   render();
   if (!result) return;
-  lastOutput = status.outputDir;
   $('#open-output').hidden = false;
   const body = $('#summary-body');
   body.replaceChildren(
@@ -156,6 +149,7 @@ async function doGenerate(indices) {
     result.skipped ? el('p', { class: 'muted' }, `${result.skipped} skipped because of data problems.`) : '',
     ...(result.failed.length ? [el('p', { class: 'err' }, `${result.failed.length} failed:`), el('ul', {}, ...result.failed.map((f) => el('li', {}, `${f.title}: ${f.error}`)))] : []));
   $('#summary-dialog').showModal();
+  syncPreviewBounds();
 }
 
 $('#template-select').addEventListener('change', async (e) => {
@@ -173,16 +167,18 @@ $('#select-none').addEventListener('click', () => { checked.clear(); render(); }
 $('#choose-output').addEventListener('click', async () => { if (await run(() => rf.chooseOutputDir())) refresh(); });
 $('#generate-all').addEventListener('click', () => doGenerate(null));
 $('#generate-selected').addEventListener('click', () => doGenerate([...checked]));
-$('#open-output').addEventListener('click', () => lastOutput && run(() => rf.openPath(lastOutput)));
+$('#open-output').addEventListener('click', () => run(() => rf.openOutputFolder()));
 $('#open-template-folder').addEventListener('click', () => run(() => rf.openTemplateFolder()));
-$('#new-template').addEventListener('click', () => { $('#new-template-name').value = ''; $('#new-template-dialog').showModal(); });
+$('#new-template').addEventListener('click', () => { $('#new-template-name').value = ''; $('#new-template-dialog').showModal(); syncPreviewBounds(); });
+$('#summary-dialog').addEventListener('close', syncPreviewBounds);
 $('#new-template-dialog').addEventListener('close', async () => {
+  syncPreviewBounds();
   if ($('#new-template-dialog').returnValue !== 'ok') return;
   const s = await run(() => rf.newTemplate($('#new-template-name').value));
   if (s) { status = s; render(); refreshPreview(); }
 });
-$('#preview').addEventListener('load', fitPreview);
-window.addEventListener('resize', fitPreview);
+new ResizeObserver(syncPreviewBounds).observe($('#preview-pane'));
+window.addEventListener('resize', syncPreviewBounds);
 document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => {
   e.preventDefault();

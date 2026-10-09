@@ -7,7 +7,10 @@ function groupKey(value) {
   if (isBlank(value)) return null;
   if (value instanceof Date) return value.toISOString();
   const s = String(value).trim();
-  return /^-?\d+(\.\d+)?$/.test(s) ? String(Number(s)) : s;
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return s;
+  // 243, "243", and "243.0" match; digits beyond float precision are compared as text, never rounded.
+  const n = Number(s);
+  return Number.isSafeInteger(Math.trunc(n)) ? String(n) : s.replace(/\.0+$/, '');
 }
 
 function rawValue(value) {

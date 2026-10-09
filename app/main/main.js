@@ -2,16 +2,17 @@
 // Electron entry point: window, IPC bridge to the controller, file watchers.
 const fs = require('fs');
 const path = require('path');
-const { pathToFileURL } = require('url');
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, session } = require('electron');
 const { resolveHtmlDir } = require('./paths');
 const { createSettings } = require('./settings');
 const { createController } = require('./controller');
 const { renderPdf } = require('./render-pdf');
+const { createPreviewView } = require('./preview-view');
 const { SUPPORTED_EXTENSIONS } = require('../lib/import');
 
 let win = null;
 let controller = null;
+let preview = null;
 let watchers = [];
 
 function send(channel, payload) {
@@ -78,7 +79,8 @@ function registerIpc() {
   });
   handle('loadData', (filePath, sheet) => { const s = controller.loadData(filePath, sheet); rewatch(); return s; });
   handle('setMapping', (mapping) => controller.setMapping(mapping));
-  handle('previewUrl', (index) => `${pathToFileURL(controller.previewFile(index)).href}?t=${Date.now()}`);
+  handle('showPreview', (index) => preview.show(controller.previewFile(index)));
+  handle('setPreviewBounds', (rect, visible) => preview.setBounds(rect, visible));
   handle('chooseOutputDir', async () => {
     const r = await dialog.showOpenDialog(win, { title: 'Choose output folder', properties: ['openDirectory', 'createDirectory'] });
     if (r.canceled) return null;
@@ -97,7 +99,11 @@ function registerIpc() {
     const dir = controller.state().templateDir || controller.status().htmlDir;
     return shell.openPath(dir);
   });
-  handle('openPath', (p) => shell.openPath(p));
+  handle('openOutputFolder', () => {
+    const dir = controller.status().outputDir;
+    if (!dir) throw new Error('Choose an output folder first.');
+    return shell.openPath(dir);
+  });
 }
 
 function createWindow() {
@@ -112,6 +118,7 @@ function createWindow() {
   win.webContents.on('will-navigate', (event) => event.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.loadFile(path.join(__dirname, '..', 'ui', 'index.html'));
+  preview = createPreviewView(win);
 }
 
 app.whenReady().then(() => {
@@ -125,6 +132,10 @@ app.whenReady().then(() => {
     app.quit();
     return;
   }
+  // The app UI only ever loads local files; block any network request it might make.
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    callback({ cancel: !/^(file|data|blob|devtools):/i.test(details.url) });
+  });
   const settings = createSettings(path.join(app.getPath('userData'), 'settings.json'));
   controller = createController({ htmlDir, settings, renderPdf });
   const templates = controller.listTemplates();

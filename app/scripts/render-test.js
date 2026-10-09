@@ -1,16 +1,20 @@
 'use strict';
 // End-to-end check in real Electron: sample data → statement PDFs, overflow, combined file, second template.
 // Run from app/: npm run render-test
+
+// Report any startup error as a console failure instead of Electron's error dialog.
+process.on('uncaughtException', (err) => { console.error('render-test: FAIL'); console.error(err); process.exit(1); });
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('assert/strict');
-const { app } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const { PDFDocument } = require('pdf-lib');
 const { createController } = require('../main/controller');
 const { createSettings } = require('../main/settings');
 const { renderPdf } = require('../main/render-pdf');
 const { renderHtml } = require('../lib/render');
+const { createPreviewView } = require('../main/preview-view');
 
 const ROOT = path.join(__dirname, '..', '..');
 const pages = async (file) => (await PDFDocument.load(fs.readFileSync(file))).getPageCount();
@@ -46,6 +50,26 @@ async function main() {
 
   const leftovers = fs.readdirSync(path.join(ROOT, 'html', 'grouped-report')).filter((f) => f.startsWith('_render-'));
   assert.deepEqual(leftovers, []);
+  // Preview isolation: template code in the preview must not reach the app API, Node, or the network.
+  const host = new BrowserWindow({ show: false, webPreferences: { preload: path.join(__dirname, '..', 'main', 'preload.js'), contextIsolation: true, sandbox: true } });
+  await host.loadURL('data:text/html,<p>host</p>');
+  const previewView = createPreviewView(host);
+  const evil = path.join(work, 'evil.html');
+  fs.writeFileSync(evil, `<script>
+    window.probe = (async () => {
+      let net = 'blocked';
+      try { await fetch('https://example.com/'); net = 'reached'; } catch { /* blocked */ }
+      return { api: typeof window.parent.reportForge, top: typeof window.top.reportForge, node: typeof require, net };
+    })();
+  </script>`);
+  await previewView.show(evil);
+  const probe = await previewView.view.webContents.executeJavaScript('window.probe');
+  assert.deepEqual(probe, { api: 'undefined', top: 'undefined', node: 'undefined', net: 'blocked' });
+  await previewView.view.webContents.executeJavaScript("location.href = 'https://example.com/'; 1");
+  await new Promise((r) => setTimeout(r, 500));
+  assert.ok(previewView.view.webContents.getURL().startsWith('file:'), 'preview navigated away');
+  host.destroy();
+
   console.log(`render-test: PASS (output in ${work})`);
 }
 

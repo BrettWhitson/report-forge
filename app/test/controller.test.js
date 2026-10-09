@@ -85,3 +85,57 @@ test('bad data file is reported in status, not thrown', () => {
   assert.match(s.dataError, /not found/);
   assert.equal(s.data, null);
 });
+
+const NL = String.fromCharCode(10);
+
+test('setMapping merges single-field changes and ignores unknown fields', () => {
+  const { c, settings } = make();
+  c.selectTemplate('simple-letter');
+  const dir = tempDir();
+  fs.writeFileSync(path.join(dir, 'a.csv'), ['Full Name', 'Ann', ''].join(NL));
+  fs.writeFileSync(path.join(dir, 'b.csv'), ['Full Name,city', 'Bo,Reno', ''].join(NL));
+  c.loadData(path.join(dir, 'a.csv'));
+  c.setMapping({ name: 'Full Name' });
+  c.setMapping({ city: null });
+  c.setMapping({ city: 'Full Name' });
+  c.setMapping({ city: null, other: 'x' });
+  assert.deepEqual(settings.get('mapping:simple-letter'), { name: 'Full Name', city: null });
+  const s = c.loadData(path.join(dir, 'b.csv'));
+  assert.equal(s.mapping.city, null); // the user explicitly chose "not mapped" for city above
+  assert.equal(s.mapping.name, 'Full Name');
+});
+
+test('status lists optional fields that are not mapped', () => {
+  const { c } = make();
+  c.selectTemplate('simple-letter');
+  const dir = tempDir();
+  fs.writeFileSync(path.join(dir, 'a.csv'), ['name', 'Ann', ''].join(NL));
+  const s = c.loadData(path.join(dir, 'a.csv'));
+  assert.deepEqual(s.unmapped, ['city']);
+});
+
+test('unknown template ids are rejected', () => {
+  const { c } = make();
+  assert.throws(() => c.selectTemplate(path.join('..', '..', 'Windows')), /Unknown template/);
+});
+
+test('a second generate while one is running is rejected', async () => {
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const { c } = make(async ({ outPath }) => { await gate; await writeTinyPdf(outPath, 1); });
+  c.selectTemplate('grouped-report');
+  c.loadData(SAMPLE);
+  c.setOutputDir(tempDir());
+  const first = c.generate({ indices: [0] });
+  await assert.rejects(c.generate({ indices: [1] }), /already running/);
+  release();
+  assert.equal((await first).created.length, 1);
+});
+
+test('outputDir is exposed for opening the folder', () => {
+  const { c } = make();
+  c.selectTemplate('grouped-report');
+  const dir = tempDir();
+  c.setOutputDir(dir);
+  assert.equal(c.status().outputDir, dir);
+});

@@ -87,3 +87,9 @@ test('raw dates are ISO day strings', () => {
   assert.equal(records[0].raw.when, '2026-10-06');
   assert.equal(records[0].view.when, 'October 6, 2026');
 });
+
+test('very long numeric ids are never merged by float rounding', () => {
+  const rows = [row('12345678901234567891', 'A', 'X', 1), row('12345678901234567892', 'B', 'Y', 1), row('12345678901234567891.0', 'A', 'Z', 1)];
+  const { records } = buildRecords(rows, [2, 3, 4], statement);
+  assert.deepEqual(records.map((r) => r.listCount), [2, 1]);
+});

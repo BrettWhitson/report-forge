@@ -54,6 +54,7 @@ function createController({ htmlDir, settings, renderPdf, today }) {
       dataError: s.dataError,
       mapping: s.mapping,
       missing: s.missing,
+      unmapped: s.template && s.table ? s.template.fields.filter((f) => !f.required && !s.mapping[f.name]).map((f) => f.label) : [],
       records: s.built ? s.built.records.map(({ index, title, listCount, warnings, skipped }) => ({ index, title, listCount, warnings, skipped })) : [],
       issues: s.built ? s.built.issues : [],
       outputDir: s.templateId ? settings.get(`output:${s.templateId}`, null) : null,
@@ -62,6 +63,7 @@ function createController({ htmlDir, settings, renderPdf, today }) {
   }
 
   function selectTemplate(id) {
+    if (!listTemplates(htmlDir).some((t) => t.id === id)) throw new Error(`Unknown template "${id}".`);
     s.templateId = id;
     s.template = null;
     s.templateError = null;
@@ -95,9 +97,16 @@ function createController({ htmlDir, settings, renderPdf, today }) {
     return status();
   }
 
-  function setMapping(mapping) {
+  // Merge single-field changes into the saved mapping, so untouched fields keep auto-matching on future files.
+  function setMapping(changes) {
     if (!s.template) throw new Error('Choose a template first.');
-    settings.set(`mapping:${s.template.id}`, mapping);
+    const saved = { ...settings.get(`mapping:${s.template.id}`, {}) };
+    const headers = s.table ? s.table.headers : [];
+    for (const [field, header] of Object.entries(changes)) {
+      if (!s.template.fields.some((f) => f.name === field)) continue;
+      if (header === null || headers.includes(header)) saved[field] = header;
+    }
+    settings.set(`mapping:${s.template.id}`, saved);
     rebuild();
     return status();
   }
@@ -116,7 +125,17 @@ function createController({ htmlDir, settings, renderPdf, today }) {
     settings.set(`output:${s.templateId}`, dir);
   }
 
-  async function runGenerate({ indices = null, combine = false, onProgress } = {}) {
+  async function runGenerate(options = {}) {
+    if (s.generating) throw new Error('A batch is already running.');
+    s.generating = true;
+    try {
+      return await generateBatch(options);
+    } finally {
+      s.generating = false;
+    }
+  }
+
+  async function generateBatch({ indices = null, combine = false, onProgress } = {}) {
     if (!s.template) throw new Error('Choose a template first.');
     if (!s.built) throw new Error(s.missing.length ? `Map the required fields first: ${s.missing.join(', ')}` : 'Open a data file first.');
     const outDir = settings.get(`output:${s.templateId}`, null);

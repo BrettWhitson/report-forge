@@ -8,8 +8,8 @@ async function call(name, ...args) {
 }
 
 const api = {};
-for (const name of ['status', 'selectTemplate', 'openDataDialog', 'loadData', 'setMapping', 'previewUrl',
-  'chooseOutputDir', 'generate', 'newTemplate', 'openTemplateFolder', 'openPath']) {
+for (const name of ['status', 'selectTemplate', 'openDataDialog', 'loadData', 'setMapping', 'showPreview', 'setPreviewBounds',
+  'chooseOutputDir', 'generate', 'newTemplate', 'openTemplateFolder', 'openOutputFolder']) {
   api[name] = (...args) => call(name, ...args);
 }
 api.onProgress = (cb) => ipcRenderer.on('rf:progress', (_event, p) => cb(p));
