@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-src file:; img-src 'self' data:; style-src 'self'">
+  <title>Report Forge</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <header class="bar">
+    <strong class="brand">Report Forge</strong>
+    <label>Template <select id="template-select"></select></label>
+    <button id="new-template">New template…</button>
+    <button id="open-template-folder">Open template folder</button>
+  </header>
+
+  <section class="bar" id="data-bar">
+    <button id="open-data" class="primary">Open data file…</button>
+    <span id="data-file" class="muted">No data file. Open one or drop it on this window.</span>
+    <label id="sheet-wrap" hidden>Sheet <select id="sheet-select"></select></label>
+    <span id="record-count" class="muted"></span>
+  </section>
+
+  <div id="message" class="message" hidden></div>
+
+  <details id="mapping-panel" class="mapping">
+    <summary>Column mapping <span id="mapping-status" class="muted"></span></summary>
+    <table>
+      <thead><tr><th>Field</th><th>Format</th><th>Data column</th><th>Sample (first row)</th></tr></thead>
+      <tbody id="mapping-body"></tbody>
+    </table>
+  </details>
+
+  <main>
+    <aside class="records">
+      <div class="records-tools">
+        <input id="search" type="search" placeholder="Search records">
+        <button id="select-all">All</button>
+        <button id="select-none">None</button>
+      </div>
+      <ul id="record-list"></ul>
+    </aside>
+    <section id="preview-pane" class="preview-pane">
+      <iframe id="preview" title="Preview"></iframe>
+    </section>
+  </main>
+
+  <footer class="bar">
+    <button id="choose-output">Output folder…</button>
+    <span id="output-dir" class="muted">Not chosen</span>
+    <label><input type="checkbox" id="combine"> Also create one combined PDF</label>
+    <span class="spacer"></span>
+    <progress id="progress" value="0" max="1" hidden></progress>
+    <button id="generate-selected">Generate Selected</button>
+    <button id="generate-all" class="primary">Generate All</button>
+    <button id="open-output" hidden>Open output folder</button>
+  </footer>
+
+  <dialog id="new-template-dialog">
+    <form method="dialog">
+      <h3>New template</h3>
+      <label>Name <input id="new-template-name" autocomplete="off"></label>
+      <menu><button value="cancel">Cancel</button><button value="ok" class="primary">Create</button></menu>
+    </form>
+  </dialog>
+
+  <dialog id="summary-dialog">
+    <div id="summary-body"></div>
+    <form method="dialog"><menu><button class="primary">Close</button></menu></form>
+  </dialog>
+
+  <script src="ui.js"></script>
+</body>
+</html>
