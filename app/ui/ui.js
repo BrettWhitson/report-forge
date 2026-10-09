@@ -41,6 +41,7 @@ function render() {
   const errors = [s.templateError && `Template problem: ${s.templateError}`, s.dataError && `Data problem: ${s.dataError}`].filter(Boolean);
   if (s.missing.length) errors.push(`Map these required fields before generating: ${s.missing.join(', ')}`);
   if (s.issues.length) errors.push(...s.issues);
+  if (s.unmapped && s.unmapped.length) errors.push(`Not mapped, so these will be blank: ${s.unmapped.join(', ')}`);
   showMessage(errors.join('\n'), s.templateError || s.dataError || s.missing.length ? 'error' : 'info');
 
   $('#data-file').textContent = s.data ? s.data.filePath : 'No data file. Open one or drop it on this window.';
