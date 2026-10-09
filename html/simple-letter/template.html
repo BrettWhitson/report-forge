@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Simple Letter</title>
+  <style>
+    @page { size: Letter; margin: 0; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+    .page { width: 8.5in; height: 11in; padding: 1in; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <p>{{today}}</p>
+    <p>Dear {{name}},</p>
+    <p>Thank you for visiting us from {{city}}.</p>
+  </section>
+</body>
+</html>
