@@ -1,0 +1,14 @@
+{
+  "name": "report-forge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Merge tabular data into HTML templates and produce PDFs in bulk.",
+  "scripts": {
+    "test": "node --test test/",
+    "preview": "node scripts/preview.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "mustache": "^4.2.0"
+  }
+}
