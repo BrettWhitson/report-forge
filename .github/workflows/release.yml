@@ -1,0 +1,84 @@
+name: Release
+
+# Every push to main is tested. When app/package.json has a version that has no release yet,
+# the app is built, zipped, and published as a GitHub release tagged v<version>.
+# To release: bump "version" in app/package.json and merge to main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false' # no code-signing certificate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Version
+        id: version
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version"
+          gh release view $tag --repo "${{ github.repository }}" *> $null
+          $exists = $LASTEXITCODE -eq 0
+          $global:LASTEXITCODE = 0
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "exists=$($exists.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          if ($exists) { Write-Host "Release $tag already exists; tests only." } else { Write-Host "Will release $tag." }
+
+      - name: Install
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Electron tests (render and editor)
+        run: |
+          npm run build:editor
+          npx electron scripts/render-test.js
+          npx electron scripts/editor-test.js
+
+      - name: Build app
+        if: steps.version.outputs.exists == 'false'
+        run: npm run dist
+
+      - name: Zip
+        if: steps.version.outputs.exists == 'false'
+        working-directory: dist
+        run: 7z a -tzip -mx=7 "Report-Forge-${{ steps.version.outputs.tag }}-win-x64.zip" "Report Forge"
+
+      - name: Publish release
+        if: steps.version.outputs.exists == 'false'
+        working-directory: dist
+        run: >
+          gh release create "${{ steps.version.outputs.tag }}"
+          "Report-Forge-${{ steps.version.outputs.tag }}-win-x64.zip"
+          --repo "${{ github.repository }}"
+          --target "${{ github.sha }}"
+          --title "Report Forge ${{ steps.version.outputs.tag }}"
+          --generate-notes
+          --notes "Download the zip, extract it anywhere, and run Report Forge.exe. Example templates are in the html folder; each has a sample-data file to try."

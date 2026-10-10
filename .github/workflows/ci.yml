@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main] # main is tested by the release workflow
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Electron tests (render and editor)
+        run: |
+          npm run build:editor
+          npx electron scripts/render-test.js
+          npx electron scripts/editor-test.js
