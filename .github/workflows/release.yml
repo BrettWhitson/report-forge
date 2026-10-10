@@ -27,11 +27,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       CSC_IDENTITY_AUTO_DISCOVERY: 'false' # no code-signing certificate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: lts/*
+          node-version: 26 # same major as local development
           cache: npm
           cache-dependency-path: app/package-lock.json
 

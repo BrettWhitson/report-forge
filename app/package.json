@@ -4,7 +4,7 @@
   "private": true,
   "description": "Merge tabular data into HTML templates and produce PDFs in bulk.",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test \"test/**/*.test.js\"",
     "preview": "node scripts/preview.js",
     "render-test": "npm run build:editor && electron scripts/render-test.js",
     "start": "npm run build:editor && electron .",
