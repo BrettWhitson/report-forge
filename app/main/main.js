@@ -45,7 +45,7 @@ function rewatch() {
     if (filePath && fs.existsSync(filePath)) watchers.push(fs.watch(filePath, changed));
     if (templateDir) {
       watchers.push(fs.watch(templateDir, { recursive: true }, (_event, file) => {
-        if (file && /(^|[\\/])_(render|preview)-/.test(file)) return;
+        if (file && /(^|[\\/])(_(render|preview)-|\.backups([\\/]|$))|\.rf-tmp-\d+$/.test(file)) return;
         changed();
       }));
     }

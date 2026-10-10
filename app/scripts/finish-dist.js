@@ -12,6 +12,6 @@ fs.rmSync(appDir, { recursive: true, force: true });
 fs.renameSync(built, appDir);
 fs.cpSync(path.join(ROOT, 'html'), path.join(appDir, 'html'), {
   recursive: true,
-  filter: (src) => !/[\/]_(render|preview)-[^\/]*\.html$/i.test(src),
+  filter: (src) => !/[\\/]_(render|preview)-[^\\/]*\.html$/i.test(src) && !/[\\/]\.backups([\\/]|$)/.test(src) && !/\.rf-tmp-\d+$/.test(src),
 });
 console.log(`App ready: ${appDir}`);
