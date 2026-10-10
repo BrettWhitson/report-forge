@@ -19,10 +19,14 @@ const ROOT = path.join(__dirname, '..', '..');
 const FIXTURES = path.join(__dirname, '..', 'test', 'fixtures', 'templates');
 const loadPdf = async (file) => PDFDocument.load(fs.readFileSync(file));
 const pages = async (file) => (await loadPdf(file)).getPageCount();
-// Page size in inches, rounded to 0.01.
+// Page size in inches (Chromium rounds PDF page sizes to whole points, so compare within 0.02 in).
 const pageSize = async (file) => {
   const { width, height } = (await loadPdf(file)).getPage(0).getSize();
-  return [Math.round((width / 72) * 100) / 100, Math.round((height / 72) * 100) / 100];
+  return [width / 72, height / 72];
+};
+const assertSize = (actual, expected, label) => {
+  const ok = actual.every((v, i) => Math.abs(v - expected[i]) <= 0.02);
+  assert.ok(ok, `${label}: page is ${actual.map((v) => v.toFixed(2)).join(' x ')} in, expected ${expected.join(' x ')} in`);
 };
 const EXAMPLES = {
   'certificate': { file: 'sample-data.csv', count: 6, size: [11, 8.5] },
@@ -48,7 +52,7 @@ async function main() {
   assert.deepEqual(counts.slice(0, 4), [1, 1, 1, 1], 'short invoices fit one sheet');
   assert.ok(counts[4] >= 2, `the 42-line invoice should grow onto more sheets (got ${counts[4]})`);
   assert.equal(await pages(result.combinedPath), counts.reduce((a, b) => a + b, 0));
-  assert.deepEqual(await pageSize(result.created[0]), [8.5, 11]);
+  assertSize(await pageSize(result.created[0]), [8.5, 11], 'invoice');
   console.log(`invoice: OK (pages ${counts.join(', ')})`);
 
   // Every other example renders every sample record at its own page size (the sales chart must draw).
@@ -61,7 +65,7 @@ async function main() {
     assert.equal(r.created.length, ex.count, id);
     for (const file of r.created) {
       assert.equal(await pages(file), 1, file);
-      assert.deepEqual(await pageSize(file), ex.size, file);
+      assertSize(await pageSize(file), ex.size, file);
     }
     console.log(`${id}: OK (${r.created.length} PDFs)`);
   }
