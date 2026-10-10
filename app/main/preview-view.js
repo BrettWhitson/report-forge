@@ -6,6 +6,14 @@ const { getSession } = require('./render-pdf');
 
 const PAGE_WIDTH = 816;
 
+// Preview-only styling: centre the document on a gray desk like a sheet of paper.
+// Injected into the preview view only, so printed PDFs are unaffected.
+const PREVIEW_CSS = `
+  html { background: #8a8d99 !important; }
+  @media (prefers-color-scheme: dark) { html { background: #2b2d33 !important; } }
+  body { width: fit-content !important; margin: 16px auto !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); }
+`;
+
 function createPreviewView(win) {
   const view = new WebContentsView({
     webPreferences: { session: getSession(), sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: true },
@@ -33,6 +41,7 @@ function createPreviewView(win) {
     view,
     async show(file) {
       await view.webContents.loadFile(file);
+      await view.webContents.insertCSS(PREVIEW_CSS, { cssOrigin: 'user' });
       applyZoom();
       view.setVisible(visible || !bounds);
     },

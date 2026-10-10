@@ -68,6 +68,12 @@ async function main() {
   await previewView.view.webContents.executeJavaScript("location.href = 'https://example.com/'; 1");
   await new Promise((r) => setTimeout(r, 500));
   assert.ok(previewView.view.webContents.getURL().startsWith('file:'), 'preview navigated away');
+  // Preview centering: the page sits in the middle of a wide preview pane, with no change to printed output.
+  previewView.setBounds({ x: 0, y: 0, width: 1400, height: 900 }, true);
+  await previewView.show(path.join(ROOT, 'html', 'simple-letter', 'template.html'));
+  const box = await previewView.view.webContents.executeJavaScript(
+    '(() => { const r = document.body.getBoundingClientRect(); return { left: r.left, right: document.documentElement.clientWidth - r.right }; })()');
+  assert.ok(box.left > 50 && Math.abs(box.left - box.right) <= 2, `preview not centered: ${JSON.stringify(box)}`);
   host.destroy();
 
   console.log(`render-test: PASS (output in ${work})`);
