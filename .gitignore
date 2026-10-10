@@ -2,3 +2,4 @@ node_modules/
 review/
 html/**/_preview-*.html
 dist/
+app/editor/dist/

@@ -6,9 +6,11 @@
   "scripts": {
     "test": "node --test test/",
     "preview": "node scripts/preview.js",
-    "render-test": "electron scripts/render-test.js",
-    "start": "electron .",
-    "dist": "electron-builder --win dir && node scripts/finish-dist.js"
+    "render-test": "npm run build:editor && electron scripts/render-test.js",
+    "start": "npm run build:editor && electron .",
+    "dist": "npm run build:editor && electron-builder --win dir && node scripts/finish-dist.js",
+    "build:editor": "node scripts/build-editor.js",
+    "editor-test": "npm run build:editor && electron scripts/editor-test.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -17,9 +19,18 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-html": "^6.4.12",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.43.14",
     "@fontsource-variable/source-serif-4": "^5.3.0",
+    "codemirror": "^6.0.2",
     "electron": "^44.7.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.12",
+    "grapesjs": "^0.23.6"
   },
   "main": "main/main.js",
   "build": {
@@ -29,6 +40,9 @@
       "main/**",
       "lib/**",
       "ui/**",
+      "editor/index.html",
+      "editor/editor.css",
+      "editor/dist/**",
       "package.json"
     ],
     "directories": {
