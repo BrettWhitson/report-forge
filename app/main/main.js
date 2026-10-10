@@ -10,6 +10,7 @@ const { renderPdf } = require('./render-pdf');
 const { createPreviewView } = require('./preview-view');
 const { SUPPORTED_EXTENSIONS } = require('../lib/import');
 const { normalizeTheme } = require('./theme');
+const { registerEditorIpc, openEditor } = require('./editor-window');
 
 let win = null;
 let controller = null;
@@ -101,6 +102,11 @@ function registerIpc() {
     const dir = controller.state().templateDir || controller.status().htmlDir;
     return shell.openPath(dir);
   });
+  handle('openEditor', () => {
+    const s = controller.status();
+    if (!s.template) throw new Error(s.templateError || 'Choose a template first.');
+    openEditor({ htmlDir: s.htmlDir, id: s.template.id, name: s.template.name });
+  });
   handle('getTheme', () => normalizeTheme(settings.get('theme', 'system')));
   handle('setTheme', (value) => {
     const theme = normalizeTheme(value);
@@ -153,6 +159,7 @@ app.whenReady().then(() => {
   const first = templates.find((t) => t.id === last) || templates[0];
   if (first) controller.selectTemplate(first.id);
   registerIpc();
+  registerEditorIpc();
   rewatch();
   createWindow();
 });

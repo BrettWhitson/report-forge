@@ -56,4 +56,4 @@ async function renderPdf({ html, templateDir, outPath, timeoutMs = 30000 }) {
   }
 }
 
-module.exports = { renderPdf, getSession };
+module.exports = { renderPdf, getSession, READY_SCRIPT };

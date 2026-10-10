@@ -199,4 +199,5 @@ rf.onProgress((p) => { const bar = $('#progress'); bar.max = Math.max(p.total, 1
 rf.onChanged(refresh);
 $('#theme-select').addEventListener('change', (e) => run(() => rf.setTheme(e.target.value)));
 rf.getTheme().then((t) => { $('#theme-select').value = t; }).catch(() => {});
+$('#edit-template').addEventListener('click', () => run(() => rf.openEditor()));
 refresh();
