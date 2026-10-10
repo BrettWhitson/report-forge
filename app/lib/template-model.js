@@ -4,7 +4,6 @@
 
 const SECTION_TAG = /\{\{\s*[#^/][^}]*\}\}/g;
 const MARKER = /<!--rf:(\{\{\s*[#^/][^}]*\}\})-->/g;
-const SCRIPT = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
 const PLACEHOLDER = /<rf-script\b[^>]*?\bdata-rf-script="([^"]*)"[^>]*>\s*<\/rf-script>/gi;
 const COMMENT_SPLIT = /(<!--[\s\S]*?-->)/;
 
@@ -20,14 +19,30 @@ function joinDocument({ before, body, after }) {
   return before + body + after;
 }
 
-// Scripts become opaque placeholders (never executed or reformatted by the editor);
-// Mustache section tags become comment markers so they survive table/list parsing.
+// Splits HTML into comments, script blocks, other tags, and the text between them, in document order.
+// Comments come first so a comment that mentions "<script>" is never mistaken for a script.
+const TOKEN = /(<!--[\s\S]*?-->)|(<script\b[^>]*>[\s\S]*?<\/script\s*>)|(<[^>]*>)/gi;
+
+function mapTokens(html, onText, onToken) {
+  let out = '';
+  let last = 0;
+  TOKEN.lastIndex = 0;
+  for (let m = TOKEN.exec(html); m; m = TOKEN.exec(html)) {
+    out += onText(html.slice(last, m.index)) + onToken(m);
+    last = TOKEN.lastIndex;
+  }
+  return out + onText(html.slice(last));
+}
+
+// Scripts become opaque placeholders (never executed or reformatted by the editor).
+// Mustache section tags in text become comment markers so they survive table/list parsing;
+// tags inside attributes and comments are left exactly as written.
 function protect(body) {
-  const withPlaceholders = body.replace(SCRIPT, (s) => `<rf-script data-rf-script="${encodeURIComponent(s)}"></rf-script>`);
-  return withPlaceholders
-    .split(COMMENT_SPLIT)
-    .map((part) => (part.startsWith('<!--') ? part : part.replace(SECTION_TAG, (t) => `<!--rf:${t}-->`)))
-    .join('');
+  return mapTokens(
+    body,
+    (text) => text.replace(SECTION_TAG, (t) => `<!--rf:${t}-->`),
+    (m) => (m[2] ? `<rf-script data-rf-script="${encodeURIComponent(m[2])}"></rf-script>` : m[0]),
+  );
 }
 
 function restore(body) {
@@ -36,11 +51,13 @@ function restore(body) {
 
 function extractHeadStyles(before) {
   const css = [];
-  const out = before.replace(/<style\b([^>]*)>([\s\S]*?)<\/style\s*>\s*/gi, (_m, attrs, text) => {
+  const takeStyles = (part) => part.replace(/<style\b([^>]*)>([\s\S]*?)<\/style\s*>\s*/gi, (_m, attrs, text) => {
     const media = /\bmedia\s*=\s*["']([^"']+)["']/i.exec(attrs);
     css.push(media && media[1].trim().toLowerCase() !== 'all' ? `@media ${media[1].trim()} {\n${text.trim()}\n}` : text.trim());
     return '';
   });
+  // Commented-out <style> blocks stay commented out.
+  const out = before.split(COMMENT_SPLIT).map((part) => (part.startsWith('<!--') ? part : takeStyles(part))).join('');
   return { before: out, css: css.join('\n\n') };
 }
 

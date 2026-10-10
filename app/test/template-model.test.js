@@ -106,3 +106,27 @@ test('parsePageSetup reads the managed block, plain @page rules, or defaults to 
   assert.deepEqual(m.parsePageSetup('@page { size: 5in 7in }'), { size: 'custom', orientation: 'portrait', width: 5, height: 7, unit: 'in' });
   assert.deepEqual(m.parsePageSetup('p{}'), { size: 'letter', orientation: 'portrait' });
 });
+
+test('section tags inside attribute values are left as they are', () => {
+  const body = '<table><tbody>{{#rows}}<tr class="{{#odd}}odd{{/odd}}" title="{{^x}}none{{/x}}"><td>{{v}}</td></tr>{{/rows}}</tbody></table>';
+  const p = m.protect(body);
+  assert.match(p, /class="\{\{#odd\}\}odd\{\{\/odd\}\}"/);
+  assert.match(p, /title="\{\{\^x\}\}none\{\{\/x\}\}"/);
+  assert.match(p, /<tbody><!--rf:\{\{#rows\}\}--><tr/);
+  assert.equal(m.restore(p), body);
+});
+
+test('a comment that mentions <script> does not swallow the content after it', () => {
+  const body = '<!-- <script> removed -->\n<p>{{#a}}b{{/a}}</p>\n<script>x()</script>\n<p>tail</p>';
+  const p = m.protect(body);
+  assert.ok(p.startsWith('<!-- <script> removed -->'));
+  assert.equal((p.match(/<rf-script /g) || []).length, 1);
+  assert.match(p, /<p>tail<\/p>$/);
+  assert.equal(m.restore(p), body);
+});
+
+test('extractHeadStyles leaves commented-out styles alone', () => {
+  const r = m.extractHeadStyles('<head><!-- <style>b{}</style> --><style>a{}</style></head>');
+  assert.equal(r.css, 'a{}');
+  assert.equal(r.before, '<head><!-- <style>b{}</style> --></head>');
+});
