@@ -104,11 +104,11 @@ test('an invalid bundle is rejected before anything is written', () => {
 test('changedOnDisk detects edits made outside the editor', () => {
   const dir = tpl({ 'template.html': '<p>x</p>' });
   const b = readBundle(dir);
-  assert.equal(changedOnDisk(dir, b.cssFile, b.mtimes), false);
+  assert.equal(changedOnDisk(dir, b.cssFile, b.stamps), false);
   const later = new Date(Date.now() + 5000);
   fs.writeFileSync(path.join(dir, 'template.html'), '<p>y</p>');
   fs.utimesSync(path.join(dir, 'template.html'), later, later);
-  assert.equal(changedOnDisk(dir, b.cssFile, b.mtimes), true);
+  assert.equal(changedOnDisk(dir, b.cssFile, b.stamps), true);
 });
 
 test('stylesheet hrefs outside the template folder are never used', () => {

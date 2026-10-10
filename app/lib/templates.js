@@ -84,7 +84,7 @@ function loadTemplate(dir) {
     list: raw.list || listNames[0] || 'rows',
   };
   for (const [name, f] of Object.entries(declared)) {
-    if (f.format && !FORMATS.includes(f.format)) {
+    if (f && f.format && !FORMATS.includes(f.format)) {
       throw new TemplateError(`template.json: field "${name}" has unknown format "${f.format}"`);
     }
   }
@@ -166,7 +166,7 @@ function slugify(s) {
 }
 
 function copyTemplate(sourceDir, dir, displayName) {
-  fs.cpSync(sourceDir, dir, { recursive: true, filter: (src) => !TEMP_FILE.test(path.basename(src)) });
+  fs.cpSync(sourceDir, dir, { recursive: true, filter: (src) => !TEMP_FILE.test(path.basename(src)) && path.basename(src) !== '.backups' });
   const manifestPath = path.join(dir, 'template.json');
   const manifest = fs.existsSync(manifestPath) ? readManifest(dir) : {};
   manifest.name = displayName;
