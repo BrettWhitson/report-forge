@@ -1,0 +1,142 @@
+[
+  {
+    "Region": "Pacific Northwest",
+    "Quarter": "Q3 2026",
+    "Manager": "Dana Kimura",
+    "Rep Name": "Avery Collins",
+    "Deals": 14,
+    "Revenue": 412000,
+    "Quota": 380000,
+    "Attainment": 1.08
+  },
+  {
+    "Region": "Pacific Northwest",
+    "Quarter": "Q3 2026",
+    "Manager": "Dana Kimura",
+    "Rep Name": "Bilal Hassan",
+    "Deals": 9,
+    "Revenue": 268500,
+    "Quota": 300000,
+    "Attainment": 0.9
+  },
+  {
+    "Region": "Pacific Northwest",
+    "Quarter": "Q3 2026",
+    "Manager": "Dana Kimura",
+    "Rep Name": "Chloe Martens",
+    "Deals": 17,
+    "Revenue": 455250,
+    "Quota": 400000,
+    "Attainment": 1.14
+  },
+  {
+    "Region": "Pacific Northwest",
+    "Quarter": "Q3 2026",
+    "Manager": "Dana Kimura",
+    "Rep Name": "Diego Alvarez",
+    "Deals": 11,
+    "Revenue": 301000,
+    "Quota": 320000,
+    "Attainment": 0.94
+  },
+  {
+    "Region": "Mountain West",
+    "Quarter": "Q3 2026",
+    "Manager": "Felix Navarro",
+    "Rep Name": "Erin Doyle",
+    "Deals": 8,
+    "Revenue": 198400,
+    "Quota": 250000,
+    "Attainment": 0.79
+  },
+  {
+    "Region": "Mountain West",
+    "Quarter": "Q3 2026",
+    "Manager": "Felix Navarro",
+    "Rep Name": "Gabe Thornton",
+    "Deals": 12,
+    "Revenue": 289900,
+    "Quota": 260000,
+    "Attainment": 1.12
+  },
+  {
+    "Region": "Mountain West",
+    "Quarter": "Q3 2026",
+    "Manager": "Felix Navarro",
+    "Rep Name": "Hana Sato",
+    "Deals": 10,
+    "Revenue": 247300,
+    "Quota": 240000,
+    "Attainment": 1.03
+  },
+  {
+    "Region": "Great Lakes",
+    "Quarter": "Q3 2026",
+    "Manager": "Imani Brooks",
+    "Rep Name": "Jack Pruitt",
+    "Deals": 15,
+    "Revenue": 366800,
+    "Quota": 350000,
+    "Attainment": 1.05
+  },
+  {
+    "Region": "Great Lakes",
+    "Quarter": "Q3 2026",
+    "Manager": "Imani Brooks",
+    "Rep Name": "Kara Lindgren",
+    "Deals": 13,
+    "Revenue": 334200,
+    "Quota": 350000,
+    "Attainment": 0.95
+  },
+  {
+    "Region": "Great Lakes",
+    "Quarter": "Q3 2026",
+    "Manager": "Imani Brooks",
+    "Rep Name": "Luis Ortega",
+    "Deals": 7,
+    "Revenue": 172500,
+    "Quota": 220000,
+    "Attainment": 0.78
+  },
+  {
+    "Region": "Great Lakes",
+    "Quarter": "Q3 2026",
+    "Manager": "Imani Brooks",
+    "Rep Name": "Maya Patel",
+    "Deals": 19,
+    "Revenue": 498700,
+    "Quota": 420000,
+    "Attainment": 1.19
+  },
+  {
+    "Region": "Great Lakes",
+    "Quarter": "Q3 2026",
+    "Manager": "Imani Brooks",
+    "Rep Name": "Nolan Fisher",
+    "Deals": 9,
+    "Revenue": 214600,
+    "Quota": 240000,
+    "Attainment": 0.89
+  },
+  {
+    "Region": "Southeast",
+    "Quarter": "Q3 2026",
+    "Manager": "Owen Mercer",
+    "Rep Name": "Paige Holloway",
+    "Deals": 16,
+    "Revenue": 402300,
+    "Quota": 360000,
+    "Attainment": 1.12
+  },
+  {
+    "Region": "Southeast",
+    "Quarter": "Q3 2026",
+    "Manager": "Owen Mercer",
+    "Rep Name": "Quinn Abara",
+    "Deals": 11,
+    "Revenue": 276000,
+    "Quota": 300000,
+    "Attainment": 0.92
+  }
+]

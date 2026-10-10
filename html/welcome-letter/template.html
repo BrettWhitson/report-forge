@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Welcome — {{memberName}}</title>
+  <link rel="stylesheet" href="template.css">
+</head>
+<body>
+
+<!-- One A4 welcome letter per member, with a cut-out membership card at the bottom.
+     {{today}} is filled in automatically with the date the PDFs are made. -->
+<section class="page letter">
+  <header class="letterhead">
+    <img class="logo" src="assets/logo.svg" alt="">
+    <div>
+      <div class="org">Riverside Community Library</div>
+      <div class="org-sub">48 Mill Street · Riverside · 01 234 5678 · riversidelibrary.example</div>
+    </div>
+  </header>
+
+  <div class="address">
+    <div class="date">{{today}}</div>
+    <div class="recipient">
+      <div>{{memberName}}</div>
+      <div>{{street}}</div>
+      <div>{{town}}</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <p>Dear {{memberName}},</p>
+    <p>Welcome to Riverside Community Library! Your membership is now active at our <strong>{{branch}}</strong> branch, and your card is ready to use at every branch in the network.</p>
+    <p>With your card you can borrow up to 15 books, audiobooks and films at a time, reserve titles online, use the study rooms and public computers, and join our free events — from story time to evening talks.</p>
+    <p>Cut out the card below and keep it with you, or show your member number at the desk. If you have any questions, our staff are always happy to help.</p>
+    <p class="signoff">Warm regards,</p>
+    <div class="signer">Priya Calloway</div>
+    <div class="signer-role">Head Librarian</div>
+  </div>
+
+  <div class="cut"><span>✂</span> Cut along the line</div>
+  <div class="card">
+    <div class="card-band">
+      <img class="card-logo" src="assets/logo.svg" alt="">
+      <div class="card-title">Member Card</div>
+    </div>
+    <div class="card-body">
+      <div class="card-name">{{memberName}}</div>
+      <div class="card-row"><span>Member no.</span>{{memberId}}</div>
+      <div class="card-row"><span>Home branch</span>{{branch}}</div>
+      <div class="card-row"><span>Member since</span>{{joinDate}}</div>
+      <div class="barcode" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

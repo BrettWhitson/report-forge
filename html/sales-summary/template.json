@@ -1,0 +1,17 @@
+{
+  "name": "Quarterly Sales Summary",
+  "locale": "en-US",
+  "filename": "{{quarter}} Sales Summary - {{region}}",
+  "groupBy": "region",
+  "list": "reps",
+  "fields": {
+    "region":     { "label": "Region", "required": true },
+    "quarter":    { "label": "Quarter", "required": true },
+    "manager":    { "label": "Manager", "blank": "—" },
+    "repName":    { "label": "Rep Name", "aliases": ["Sales Rep", "Rep"], "required": true },
+    "deals":      { "label": "Deals", "format": "number" },
+    "revenue":    { "label": "Revenue", "format": "currency", "decimals": 0, "required": true },
+    "quota":      { "label": "Quota", "format": "currency", "decimals": 0, "required": true },
+    "attainment": { "label": "Attainment", "format": "percent" }
+  }
+}

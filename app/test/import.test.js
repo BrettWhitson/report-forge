@@ -7,15 +7,16 @@ const XLSX = require('xlsx');
 const { readTable, ImportError } = require('../lib/import');
 const { tempDir } = require('./helpers');
 
-const SAMPLE = path.join(__dirname, 'fixtures', 'sample-data.xlsx');
+const SAMPLE = path.join(__dirname, '..', '..', 'html', 'invoice', 'sample-data.xlsx');
 
-test('reads the sample workbook and skips trailing empty rows', () => {
+test('reads the example workbook: headers, typed values, blank cells', () => {
   const t = readTable(SAMPLE);
-  assert.deepEqual(t.headers, ['Contact Id', 'Contact Name', 'Project Code', 'Project Name', 'Audited Balance', 'Funds Awarded']);
-  assert.equal(t.rows.length, 9);
-  assert.equal(t.rows[0]['Contact Name'], 'Mr. and Mrs. Alan Reed');
-  assert.equal(t.rows[0]['Audited Balance'], 50000);
-  assert.equal(t.rows[1]['Funds Awarded'], null);
+  assert.deepEqual(t.headers, ['Invoice Number', 'Invoice Date', 'Due Date', 'Customer Name', 'Customer Address', 'Customer City', 'Terms', 'Notes',
+    'SKU', 'Description', 'Quantity', 'Unit Price', 'Amount', 'Subtotal', 'Tax', 'Total']);
+  assert.equal(t.rows.length, 59);
+  assert.equal(t.rows[0]['Customer Name'], 'Bayview Marina');
+  assert.equal(t.rows[0].Amount, 154);
+  assert.equal(t.rows[8].Terms, null);
   assert.deepEqual(t.rowNumbers.slice(0, 2), [2, 3]);
   assert.equal(t.sheet, t.sheets[0]);
 });

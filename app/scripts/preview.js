@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// Fill a template with sample records and print review PDFs using headless Microsoft Edge.
+// Fill a template with the sample data file in its folder and print review PDFs using headless Microsoft Edge.
 // Usage (from app/): node scripts/preview.js [templateId] [--keep-html]
 const fs = require('fs');
 const os = require('os');
@@ -8,6 +8,10 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 const { execFileSync } = require('child_process');
 const { renderHtml } = require('../lib/render');
+const { loadTemplate } = require('../lib/templates');
+const { readTable } = require('../lib/import');
+const { autoMap, applyMapping } = require('../lib/mapping');
+const { buildRecords } = require('../lib/records');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const EDGE_CANDIDATES = [
@@ -39,10 +43,15 @@ function printPdf(edge, profileDir, htmlPath, pdfPath) {
 function main() {
   const args = process.argv.slice(2);
   const keepHtml = args.includes('--keep-html');
-  const templateId = args.find((a) => !a.startsWith('--')) || 'grouped-report';
+  const templateId = args.find((a) => !a.startsWith('--')) || 'invoice';
   const templateDir = path.join(ROOT, 'html', templateId);
-  const templateHtml = fs.readFileSync(path.join(templateDir, 'template.html'), 'utf8');
-  const records = JSON.parse(fs.readFileSync(path.join(__dirname, 'preview-data', `${templateId}.json`), 'utf8'));
+  const tpl = loadTemplate(templateDir);
+  const templateHtml = tpl.html;
+  const dataFile = fs.readdirSync(templateDir).find((f) => /^sample-data\./.test(f));
+  if (!dataFile) throw new Error(`No sample-data file in ${templateDir}`);
+  const table = readTable(path.join(templateDir, dataFile));
+  const built = buildRecords(applyMapping(table.rows, autoMap(table.headers, tpl.fields)), table.rowNumbers, tpl);
+  const records = built.records.map((r) => ({ ...r, name: r.title }));
   const outDir = path.join(ROOT, 'review');
   fs.mkdirSync(outDir, { recursive: true });
 

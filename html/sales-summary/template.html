@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{region}} Sales Summary — {{quarter}}</title>
+  <link rel="stylesheet" href="template.css">
+</head>
+<body>
+
+<!-- One report per Region: every data row is one sales rep.
+     The script at the end draws the chart and adds up the totals from the raw data (window.reportData). -->
+<section class="page flow summary">
+  <header class="band">
+    <div>
+      <div class="kicker">Quarterly Sales Summary</div>
+      <h1>{{region}}</h1>
+    </div>
+    <div class="period">
+      <div class="quarter">{{quarter}}</div>
+      <div class="manager">Regional manager: {{manager}}</div>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-value" data-total="revenue">—</div><div class="kpi-label">Revenue</div></div>
+    <div class="kpi"><div class="kpi-value" data-total="quota">—</div><div class="kpi-label">Quota</div></div>
+    <div class="kpi"><div class="kpi-value" data-total="attainment">—</div><div class="kpi-label">Attainment</div></div>
+    <div class="kpi"><div class="kpi-value" data-total="deals">—</div><div class="kpi-label">Deals closed</div></div>
+  </div>
+
+  <h2>Revenue against quota</h2>
+  <div class="chart" data-chart="reps"></div>
+  <div class="legend"><span class="swatch bar"></span> Revenue <span class="swatch quota"></span> Quota</div>
+
+  <h2>By sales rep</h2>
+  <table class="reps">
+    <thead>
+      <tr><th>Sales rep</th><th class="num">Deals</th><th class="num">Revenue</th><th class="num">Quota</th><th class="num">Attainment</th></tr>
+    </thead>
+    <tbody>
+      {{#reps}}
+      <tr><td>{{repName}}</td><td class="num">{{deals}}</td><td class="num">{{revenue}}</td><td class="num">{{quota}}</td><td class="num">{{attainment}}</td></tr>
+      {{/reps}}
+    </tbody>
+  </table>
+
+  <p class="note">Figures are bookings for the quarter, in US dollars. Attainment is revenue divided by quota.</p>
+</section>
+
+<script>
+// Draws the revenue-versus-quota chart and fills in the region totals from window.reportData.
+// window.reportReady rejects with a readable message if the data cannot be charted.
+window.reportReady = new Promise(function (resolve, reject) {
+  function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function draw() {
+    var data = window.reportData || {};
+    if (!Array.isArray(data.reps) || data.reps.length === 0) throw new Error('Sales chart: this region has no sales rep rows');
+    var reps = data.reps.map(function (r) {
+      var revenue = Number(r.revenue);
+      var quota = Number(r.quota);
+      var deals = Number(r.deals) || 0;
+      if (!isFinite(revenue) || !isFinite(quota)) throw new Error('Sales chart: revenue and quota must be numbers (rep "' + r.repName + '")');
+      return { name: String(r.repName || ''), revenue: revenue, quota: quota, deals: deals };
+    });
+
+    var totals = reps.reduce(function (t, r) {
+      return { revenue: t.revenue + r.revenue, quota: t.quota + r.quota, deals: t.deals + r.deals };
+    }, { revenue: 0, quota: 0, deals: 0 });
+    var text = {
+      revenue: money(totals.revenue),
+      quota: money(totals.quota),
+      attainment: totals.quota > 0 ? Math.round((totals.revenue / totals.quota) * 100) + '%' : '—',
+      deals: String(totals.deals),
+    };
+    document.querySelectorAll('[data-total]').forEach(function (node) {
+      node.textContent = text[node.getAttribute('data-total')];
+    });
+
+    var NS = 'http://www.w3.org/2000/svg';
+    function el(name, attrs, content) {
+      var node = document.createElementNS(NS, name);
+      Object.keys(attrs).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+      if (content !== undefined) node.textContent = content;
+      return node;
+    }
+    var box = document.querySelector('.chart[data-chart="reps"]');
+    if (!box) return resolve();
+    var rowH = 30, labelW = 150, valueW = 90;
+    var W = box.clientWidth, H = reps.length * rowH + 6;
+    var max = Math.max.apply(null, reps.map(function (r) { return Math.max(r.revenue, r.quota); })) || 1;
+    var scale = function (v) { return ((W - labelW - valueW) * v) / max; };
+    var svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'class': 'chart-svg' });
+    reps.forEach(function (r, i) {
+      var y = i * rowH + 4;
+      svg.appendChild(el('text', { x: labelW - 10, y: y + 15, 'class': 'name', 'text-anchor': 'end' }, r.name));
+      svg.appendChild(el('rect', { x: labelW, y: y + 3, width: Math.max(1, scale(r.revenue)), height: 16, rx: 2,
+        'class': r.revenue >= r.quota ? 'bar met' : 'bar' }));
+      svg.appendChild(el('line', { x1: labelW + scale(r.quota), x2: labelW + scale(r.quota), y1: y, y2: y + 22, 'class': 'quota' }));
+      svg.appendChild(el('text', { x: W - 4, y: y + 15, 'class': 'value', 'text-anchor': 'end' }, money(r.revenue)));
+    });
+    box.appendChild(svg);
+    resolve();
+  }
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(draw).catch(reject);
+});
+</script>
+
+</body>
+</html>

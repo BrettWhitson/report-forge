@@ -1,0 +1,50 @@
+/* ===== Welcome letter: design tokens (edit these to restyle) ===== */
+:root {
+  --green: #2f6b4f;
+  --green-soft: #e7f0eb;
+  --ink: #26302b;
+  --muted: #66716b;
+  --serif: Cambria, Georgia, serif;
+  --sans: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--serif); font-size: 11pt; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.letter { background: #fff; padding: 18mm 22mm 0; }
+
+/* ===== Letterhead ===== */
+.letterhead { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 2px solid var(--green); }
+.logo { width: 15mm; height: 15mm; }
+.org { font-size: 17pt; font-weight: 700; color: var(--green); }
+.org-sub { font-family: var(--sans); font-size: 8pt; color: var(--muted); margin-top: 2px; }
+
+/* ===== Address and body ===== */
+.address { display: flex; flex-direction: row-reverse; justify-content: space-between; margin-top: 12mm; line-height: 1.45; }
+.date { color: var(--muted); }
+.body { margin-top: 10mm; line-height: 1.55; }
+.body p { margin: 0 0 4mm; }
+.signoff { margin-top: 7mm !important; }
+.signer { font-weight: 700; }
+.signer-role { font-family: var(--sans); font-size: 9pt; color: var(--muted); }
+
+/* ===== Cut-out member card ===== */
+.cut { position: absolute; left: 0; right: 0; bottom: 78mm; border-top: 1px dashed #9aa59f; font-family: var(--sans); font-size: 7.5pt; color: #9aa59f; text-align: center; }
+.cut span { position: relative; top: -7px; background: #fff; padding: 0 4px; font-size: 10pt; }
+.card { position: absolute; left: 50%; bottom: 18mm; width: 85.6mm; height: 54mm; margin-left: -42.8mm; border-radius: 3.5mm; overflow: hidden;
+  border: 1px solid #c9d6cf; font-family: var(--sans); background: #fff; }
+.card-band { display: flex; align-items: center; gap: 6px; padding: 3mm 4mm; background: var(--green); color: #fff; }
+.card-logo { width: 7mm; height: 7mm; }
+.card-title { font-size: 9pt; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+.card-body { padding: 3mm 4mm; }
+.card-name { font-family: var(--serif); font-size: 13pt; font-weight: 700; margin-bottom: 1.5mm; }
+.card-row { font-size: 8pt; line-height: 1.5; }
+.card-row span { display: inline-block; width: 24mm; color: var(--muted); }
+.barcode { height: 8mm; margin-top: 2mm; background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 3px, var(--ink) 3px 5px, transparent 5px 6px, var(--ink) 6px 7px, transparent 7px 10px); }
+
+/* === Report Forge page setup (managed by the editor) === */
+@page { size: 210mm 297mm; margin: 0; }
+.page { position: relative; width: 210mm; height: 297mm; overflow: hidden; break-after: page; }
+.page:last-of-type { break-after: auto; }
+.page.flow { height: auto; min-height: 297mm; overflow: visible; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* === end page setup === */

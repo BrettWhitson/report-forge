@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Invoice {{invoiceNumber}}</title>
+  <link rel="stylesheet" href="template.css">
+</head>
+<body>
+
+<!-- One invoice per Invoice Number: every data row is one line item.
+     The page is a "Grows" page, so a long list of items continues onto more sheets. -->
+<section class="page flow invoice">
+  <header class="masthead">
+    <img class="logo" src="assets/logo.svg" alt="">
+    <div class="company">
+      <div class="company-name">Harbor &amp; Pine Supply Co.</div>
+      <div>1200 Dockside Way, Suite 4</div>
+      <div>Port Alder, WA 98001</div>
+      <div>billing@harborandpine.example</div>
+    </div>
+    <div class="doc">
+      <h1>Invoice</h1>
+      <table class="meta">
+        <tr><th>Invoice no.</th><td>{{invoiceNumber}}</td></tr>
+        <tr><th>Date</th><td>{{invoiceDate}}</td></tr>
+        <tr><th>Due</th><td>{{dueDate}}</td></tr>
+      </table>
+    </div>
+  </header>
+
+  <div class="parties">
+    <div>
+      <div class="label">Bill to</div>
+      <div class="customer">{{customerName}}</div>
+      <div>{{customerAddress}}</div>
+      <div>{{customerCity}}</div>
+    </div>
+    <div>
+      <div class="label">Terms</div>
+      <div>{{terms}}</div>
+    </div>
+  </div>
+
+  <table class="items">
+    <thead>
+      <tr><th class="sku">Item</th><th class="desc">Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr>
+    </thead>
+    <tbody>
+      {{#items}}
+      <tr><td class="sku">{{sku}}</td><td class="desc">{{description}}</td><td class="num">{{quantity}}</td><td class="num">{{unitPrice}}</td><td class="num">{{amount}}</td></tr>
+      {{/items}}
+    </tbody>
+  </table>
+
+  <div class="summary keep-together">
+    <div class="notes">
+      <div class="label">Notes</div>
+      <p>{{notes}}</p>
+    </div>
+    <table class="totals">
+      <tr><th>Subtotal</th><td>{{subtotal}}</td></tr>
+      <tr><th>Sales tax</th><td>{{tax}}</td></tr>
+      <tr class="grand"><th>Total due</th><td>{{total}}</td></tr>
+    </table>
+  </div>
+
+  <div class="pay keep-together">
+    <div class="label">How to pay</div>
+    <p>Pay online at harborandpine.example/pay, or by bank transfer to account 000-111-222 with the invoice number as the reference. Thank you for your business.</p>
+  </div>
+</section>
+
+</body>
+</html>

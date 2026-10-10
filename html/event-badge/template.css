@@ -1,0 +1,39 @@
+/* ===== Event badge: design tokens (edit these to restyle) ===== */
+:root {
+  --ink: #1c1d24;
+  --night: #17233f;
+  --attendee: #3a7bd5;
+  --speaker: #e2574c;
+  --staff: #2f9e6e;
+  --sponsor: #c79a2b;
+  --sans: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* The ticket color: each badge has a class like "type-Speaker", taken from the Ticket Type column. */
+.badge { --type: var(--attendee); display: flex; flex-direction: column; background: #fff; }
+.type-Speaker { --type: var(--speaker); }
+.type-Staff { --type: var(--staff); }
+.type-Sponsor { --type: var(--sponsor); }
+
+.event { display: flex; align-items: center; gap: 10px; padding: 0.16in 0.22in; background: var(--night); color: #fff; }
+.mark { width: 0.42in; height: 0.42in; }
+.event-name { font-size: 12pt; font-weight: 700; letter-spacing: 0.04em; }
+.event-meta { font-size: 7.5pt; opacity: 0.75; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.who { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 0.25in; }
+.first { font-size: 30pt; font-weight: 800; line-height: 1; color: var(--night); }
+.last { font-size: 15pt; font-weight: 600; margin-top: 2px; }
+.company { font-size: 10pt; color: #5a5d6b; margin-top: 8px; border-left: 3px solid var(--type); padding-left: 7px; }
+
+.ticket { padding: 0.08in 0.22in; background: var(--type); color: #fff; font-size: 11pt; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; text-align: center; }
+
+/* === Report Forge page setup (managed by the editor) === */
+@page { size: 4in 3in; margin: 0; }
+.page { position: relative; width: 4in; height: 3in; overflow: hidden; break-after: page; }
+.page:last-of-type { break-after: auto; }
+.page.flow { height: auto; min-height: 3in; overflow: visible; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* === end page setup === */

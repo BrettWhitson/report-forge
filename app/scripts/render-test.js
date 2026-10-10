@@ -1,5 +1,5 @@
 'use strict';
-// End-to-end check in real Electron: sample data → statement PDFs, overflow, combined file, second template.
+// End-to-end check in real Electron: every example template with its sample data, page sizes, overflow, combined file.
 // Run from app/: npm run render-test
 
 // Report any startup error as a console failure instead of Electron's error dialog.
@@ -13,43 +13,71 @@ const { PDFDocument } = require('pdf-lib');
 const { createController } = require('../main/controller');
 const { createSettings } = require('../main/settings');
 const { renderPdf } = require('../main/render-pdf');
-const { renderHtml } = require('../lib/render');
 const { createPreviewView } = require('../main/preview-view');
 
 const ROOT = path.join(__dirname, '..', '..');
-const pages = async (file) => (await PDFDocument.load(fs.readFileSync(file))).getPageCount();
+const FIXTURES = path.join(__dirname, '..', 'test', 'fixtures', 'templates');
+const loadPdf = async (file) => PDFDocument.load(fs.readFileSync(file));
+const pages = async (file) => (await loadPdf(file)).getPageCount();
+// Page size in inches, rounded to 0.01.
+const pageSize = async (file) => {
+  const { width, height } = (await loadPdf(file)).getPage(0).getSize();
+  return [Math.round((width / 72) * 100) / 100, Math.round((height / 72) * 100) / 100];
+};
+const EXAMPLES = {
+  'certificate': { file: 'sample-data.csv', count: 6, size: [11, 8.5] },
+  'sales-summary': { file: 'sample-data.json', count: 4, size: [8.5, 11] },
+  'event-badge': { file: 'sample-data.csv', count: 8, size: [4, 3] },
+  'welcome-letter': { file: 'sample-data.tsv', count: 4, size: [8.27, 11.69] },
+};
 
 async function main() {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'report-forge-render-'));
   const settings = createSettings(path.join(work, 'settings.json'));
   const c = createController({ htmlDir: path.join(ROOT, 'html'), settings, renderPdf });
 
-  c.selectTemplate('grouped-report');
-  c.loadData(path.join(__dirname, '..', 'test', 'fixtures', 'sample-data.xlsx'));
-  const out = path.join(work, 'statement');
-  c.setOutputDir(out);
+  // Invoice: grouped records, a combined file, and a long invoice that grows onto more sheets.
+  c.selectTemplate('invoice');
+  c.loadData(path.join(ROOT, 'html', 'invoice', 'sample-data.xlsx'));
+  c.setOutputDir(path.join(work, 'invoice'));
   const result = await c.generate({ indices: null, combine: true });
   assert.deepEqual(result.failed, []);
   assert.equal(result.created.length, 5);
-  for (const file of result.created) assert.equal(await pages(file), 4, file);
-  assert.equal(await pages(result.combinedPath), 20);
+  const counts = [];
+  for (const file of result.created) counts.push(await pages(file));
+  assert.deepEqual(counts.slice(0, 4), [1, 1, 1, 1], 'short invoices fit one sheet');
+  assert.ok(counts[4] >= 2, `the 42-line invoice should grow onto more sheets (got ${counts[4]})`);
+  assert.equal(await pages(result.combinedPath), counts.reduce((a, b) => a + b, 0));
+  assert.deepEqual(await pageSize(result.created[0]), [8.5, 11]);
+  console.log(`invoice: OK (pages ${counts.join(', ')})`);
 
-  const preview = JSON.parse(fs.readFileSync(path.join(__dirname, 'preview-data', 'grouped-report.json'), 'utf8'));
-  const big = preview.find((r) => r.name === 'synthetic-18-funds');
-  const tpl = fs.readFileSync(path.join(ROOT, 'html', 'grouped-report', 'template.html'), 'utf8');
-  const bigPdf = path.join(work, 'overflow.pdf');
-  await renderPdf({ html: renderHtml(tpl, big), templateDir: path.join(ROOT, 'html', 'grouped-report'), outPath: bigPdf });
-  assert.equal(await pages(bigPdf), 5);
+  // Every other example renders every sample record at its own page size (the sales chart must draw).
+  for (const [id, ex] of Object.entries(EXAMPLES)) {
+    c.selectTemplate(id);
+    c.loadData(path.join(ROOT, 'html', id, ex.file));
+    c.setOutputDir(path.join(work, id));
+    const r = await c.generate({ indices: null, combine: false });
+    assert.deepEqual(r.failed, [], `${id}: ${JSON.stringify(r.failed)}`);
+    assert.equal(r.created.length, ex.count, id);
+    for (const file of r.created) {
+      assert.equal(await pages(file), 1, file);
+      assert.deepEqual(await pageSize(file), ex.size, file);
+    }
+    console.log(`${id}: OK (${r.created.length} PDFs)`);
+  }
 
-  c.selectTemplate('simple-letter');
-  c.loadData(path.join(__dirname, '..', 'test', 'fixtures', 'simple.csv'));
-  c.setOutputDir(path.join(work, 'letters'));
-  const letters = await c.generate({ indices: null, combine: false });
+  const lettersCtl = createController({ htmlDir: FIXTURES, settings, renderPdf });
+  lettersCtl.selectTemplate('simple-letter');
+  lettersCtl.loadData(path.join(__dirname, '..', 'test', 'fixtures', 'simple.csv'));
+  lettersCtl.setOutputDir(path.join(work, 'letters'));
+  const letters = await lettersCtl.generate({ indices: null, combine: false });
   assert.equal(letters.created.length, 3);
   for (const file of letters.created) assert.equal(await pages(file), 1);
 
-  const leftovers = fs.readdirSync(path.join(ROOT, 'html', 'grouped-report')).filter((f) => f.startsWith('_render-'));
-  assert.deepEqual(leftovers, []);
+  for (const id of fs.readdirSync(path.join(ROOT, 'html'))) {
+    const leftovers = fs.readdirSync(path.join(ROOT, 'html', id)).filter((f) => f.startsWith('_render-'));
+    assert.deepEqual(leftovers, [], id);
+  }
   // Preview isolation: template code in the preview must not reach the app API, Node, or the network.
   const host = new BrowserWindow({ show: false, webPreferences: { preload: path.join(__dirname, '..', 'main', 'preload.js'), contextIsolation: true, sandbox: true } });
   await host.loadURL('data:text/html,<p>host</p>');
@@ -70,7 +98,7 @@ async function main() {
   assert.ok(previewView.view.webContents.getURL().startsWith('file:'), 'preview navigated away');
   // Preview centering: the page sits in the middle of a wide preview pane, with no change to printed output.
   previewView.setBounds({ x: 0, y: 0, width: 1400, height: 900 }, true);
-  await previewView.show(path.join(ROOT, 'html', 'simple-letter', 'template.html'));
+  await previewView.show(path.join(FIXTURES, 'simple-letter', 'template.html'));
   const box = await previewView.view.webContents.executeJavaScript(
     '(() => { const r = document.body.getBoundingClientRect(); return { left: r.left, right: document.documentElement.clientWidth - r.right }; })()');
   assert.ok(box.left > 50 && Math.abs(box.left - box.right) <= 2, `preview not centered: ${JSON.stringify(box)}`);

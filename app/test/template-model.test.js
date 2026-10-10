@@ -50,8 +50,9 @@ test('restore tolerates extra attributes on placeholders', () => {
   assert.equal(m.restore(p), '<script>a()</script>');
 });
 
-test('the statement template body survives protect/restore exactly', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'grouped-report', 'template.html'), 'utf8');
+const EXAMPLES_DIR = path.join(__dirname, '..', '..', 'html');
+for (const id of fs.readdirSync(EXAMPLES_DIR)) test(`the ${id} example body survives protect/restore exactly`, () => {
+  const html = fs.readFileSync(path.join(EXAMPLES_DIR, id, 'template.html'), 'utf8');
   const { body } = m.splitDocument(html);
   assert.equal(m.restore(m.protect(body)), body);
 });

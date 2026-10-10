@@ -1,0 +1,61 @@
+/* ===== Sales summary: design tokens (edit these to restyle) ===== */
+:root {
+  --brand: #3b3f8f;
+  --brand-soft: #e9eaf6;
+  --good: #2e8b6a;
+  --quota: #e0533d;
+  --ink: #1f2230;
+  --muted: #6a6e80;
+  --line: #e1e3ec;
+  --sans: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--sans); font-size: 10.5pt; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { background: #fff; }
+.summary { padding: 0 0.7in 0.7in; }
+
+/* ===== Header band ===== */
+.band { display: flex; justify-content: space-between; align-items: flex-end; margin: 0 -0.7in; padding: 0.55in 0.7in 0.3in; background: var(--brand); color: #fff; }
+.kicker { font-size: 9pt; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.8; }
+.band h1 { margin: 4px 0 0; font-size: 30pt; font-weight: 600; line-height: 1.1; }
+.period { text-align: right; }
+.quarter { font-size: 16pt; font-weight: 600; }
+.manager { font-size: 9.5pt; opacity: 0.85; margin-top: 2px; }
+
+/* ===== Key figures ===== */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 22px 0 8px; }
+.kpi { background: var(--brand-soft); border-radius: 6px; padding: 12px 14px; }
+.kpi-value { font-size: 18pt; font-weight: 700; color: var(--brand); }
+.kpi-label { font-size: 8.5pt; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+h2 { margin: 22px 0 10px; font-size: 12pt; font-weight: 700; color: var(--brand); border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+
+/* ===== Chart (drawn by the script in template.html) ===== */
+.chart { width: 100%; break-inside: avoid; }
+.chart-svg { display: block; }
+.chart-svg .name { font-size: 9.5pt; fill: var(--ink); }
+.chart-svg .value { font-size: 9.5pt; font-weight: 600; fill: var(--ink); }
+.chart-svg .bar { fill: var(--brand); }
+.chart-svg .bar.met { fill: var(--good); }
+.chart-svg .quota { stroke: var(--quota); stroke-width: 2.5; }
+.legend { margin-top: 6px; font-size: 8.5pt; color: var(--muted); }
+.swatch { display: inline-block; width: 12px; height: 10px; margin: 0 4px 0 12px; vertical-align: -1px; }
+.swatch.bar { background: var(--brand); margin-left: 0; }
+.swatch.quota { width: 3px; height: 12px; background: var(--quota); }
+
+/* ===== Table ===== */
+.reps { width: 100%; border-collapse: collapse; }
+.reps th { text-align: left; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--brand); }
+.reps td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+.reps tr { break-inside: avoid; }
+.reps .num { text-align: right; white-space: nowrap; }
+.note { margin-top: 14px; font-size: 8.5pt; color: var(--muted); }
+
+/* === Report Forge page setup (managed by the editor) === */
+@page { size: 8.5in 11in; margin: 0; }
+.page { position: relative; width: 8.5in; height: 11in; overflow: hidden; break-after: page; }
+.page:last-of-type { break-after: auto; }
+.page.flow { height: auto; min-height: 11in; overflow: visible; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* === end page setup === */

@@ -1,0 +1,61 @@
+/* ===== Invoice: design tokens (edit these to restyle) ===== */
+:root {
+  --brand: #1f4e5f;
+  --accent: #d98e32;
+  --ink: #23272b;
+  --muted: #6b737a;
+  --line: #d9dee2;
+  --band: #f2f5f7;
+  --sans: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--sans); font-size: 10.5pt; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { background: #fff; }
+.invoice { padding: 0.6in 0.7in 0.7in; border-top: 10px solid var(--brand); }
+.label { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.keep-together { break-inside: avoid; }
+
+/* ===== Header ===== */
+.masthead { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.logo { width: 54px; height: 54px; }
+.company { flex: 1; font-size: 9pt; line-height: 1.45; color: var(--muted); }
+.company-name { font-size: 13pt; font-weight: 700; color: var(--brand); margin-bottom: 2px; }
+.doc { text-align: right; }
+.doc h1 { margin: 0 0 6px; font-size: 26pt; font-weight: 300; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand); }
+.meta { margin-left: auto; border-collapse: collapse; font-size: 9.5pt; }
+.meta th { text-align: left; font-weight: 600; color: var(--muted); padding: 1px 12px 1px 0; }
+.meta td { text-align: right; padding: 1px 0; }
+
+/* ===== Parties ===== */
+.parties { display: flex; justify-content: space-between; margin: 20px 0 22px; line-height: 1.45; }
+.customer { font-size: 12pt; font-weight: 700; }
+
+/* ===== Line items ===== */
+.items { width: 100%; border-collapse: collapse; }
+.items thead th { background: var(--brand); color: #fff; font-size: 8.5pt; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 7px 8px; text-align: left; }
+.items td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.items tbody tr:nth-child(even) td { background: var(--band); }
+.items tr { break-inside: avoid; }
+.items .sku { width: 1.1in; }
+.items td.sku { color: var(--muted); font-size: 9pt; }
+.items .num { text-align: right; white-space: nowrap; }
+
+/* ===== Totals and notes ===== */
+.summary { display: flex; gap: 32px; margin-top: 18px; }
+.notes { flex: 1; }
+.notes p { margin: 0; line-height: 1.5; color: var(--muted); }
+.totals { border-collapse: collapse; min-width: 2.8in; }
+.totals th { text-align: left; font-weight: 600; padding: 5px 16px 5px 0; color: var(--muted); }
+.totals td { text-align: right; padding: 5px 0; }
+.totals .grand th, .totals .grand td { border-top: 2px solid var(--brand); padding-top: 9px; font-size: 13pt; font-weight: 700; color: var(--brand); }
+.pay { margin-top: 30px; padding: 12px 14px; background: var(--band); border-left: 4px solid var(--accent); }
+.pay p { margin: 0; line-height: 1.5; }
+
+/* === Report Forge page setup (managed by the editor) === */
+@page { size: 8.5in 11in; margin: 0; }
+.page { position: relative; width: 8.5in; height: 11in; overflow: hidden; break-after: page; }
+.page:last-of-type { break-after: auto; }
+.page.flow { height: auto; min-height: 11in; overflow: visible; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* === end page setup === */

@@ -1,0 +1,25 @@
+{
+  "name": "Invoice",
+  "locale": "en-US",
+  "filename": "Invoice {{invoiceNumber}} - {{customerName}}",
+  "groupBy": "invoiceNumber",
+  "list": "items",
+  "fields": {
+    "invoiceNumber":   { "label": "Invoice Number", "required": true },
+    "invoiceDate":     { "label": "Invoice Date", "format": "date", "dateFormat": "MMM d, yyyy", "required": true },
+    "dueDate":         { "label": "Due Date", "format": "date", "dateFormat": "MMM d, yyyy" },
+    "customerName":    { "label": "Customer Name", "required": true },
+    "customerAddress": { "label": "Customer Address" },
+    "customerCity":    { "label": "Customer City" },
+    "terms":           { "label": "Terms", "blank": "Due on receipt" },
+    "notes":           { "label": "Notes", "blank": "—" },
+    "sku":             { "label": "SKU" },
+    "description":     { "label": "Description", "required": true },
+    "quantity":        { "label": "Quantity", "format": "number" },
+    "unitPrice":       { "label": "Unit Price", "format": "currency" },
+    "amount":          { "label": "Amount", "format": "currency", "required": true },
+    "subtotal":        { "label": "Subtotal", "format": "currency" },
+    "tax":             { "label": "Tax", "format": "currency" },
+    "total":           { "label": "Total", "format": "currency", "required": true }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Event Badge",
+  "locale": "en-US",
+  "filename": "Badge - {{lastName}} {{firstName}}",
+  "fields": {
+    "firstName":  { "label": "First Name", "required": true },
+    "lastName":   { "label": "Last Name" },
+    "company":    { "label": "Company", "aliases": ["Organization"] },
+    "ticketType": { "label": "Ticket Type", "aliases": ["Type"], "blank": "Attendee" }
+  }
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Badge — {{firstName}} {{lastName}}</title>
+  <link rel="stylesheet" href="template.css">
+</head>
+<body>
+
+<!-- One 4 × 3 in badge per attendee. The ticket type picks the color: class "type-Speaker" etc. (see template.css).
+     "Independent" shows only when Company is blank. -->
+<section class="page badge type-{{ticketType}}">
+  <header class="event">
+    <img class="mark" src="assets/mark.svg" alt="">
+    <div>
+      <div class="event-name">Northlight Summit</div>
+      <div class="event-meta">Cedar Falls · June 2026</div>
+    </div>
+  </header>
+  <div class="who">
+    <div class="first">{{firstName}}</div>
+    <div class="last">{{lastName}}</div>
+    <div class="company">{{company}}{{^company}}Independent{{/company}}</div>
+  </div>
+  <footer class="ticket">{{ticketType}}</footer>
+</section>
+
+</body>
+</html>

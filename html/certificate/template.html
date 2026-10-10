@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Certificate — {{recipientName}}</title>
+  <link rel="stylesheet" href="template.css">
+</head>
+<body>
+
+<!-- One certificate per data row, on a landscape Letter page. -->
+<section class="page certificate">
+  <div class="frame">
+    <div class="inner">
+      <div class="org">Lakeshore Institute of Design</div>
+      <h1>Certificate <span>of Completion</span></h1>
+      <p class="presented">This certifies that</p>
+      <div class="recipient">{{recipientName}}</div>
+      <p class="reason">has successfully completed the course</p>
+      <div class="course">{{courseName}}</div>
+      <p class="details">{{hours}} instructional hours · completed {{completionDate}}</p>
+
+      <div class="signatures">
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-name">{{instructor}}</div>
+          <div class="sig-role">Course Instructor</div>
+        </div>
+        <img class="seal" src="assets/seal.svg" alt="">
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-name">Dana Whitcomb</div>
+          <div class="sig-role">Director of Programs</div>
+        </div>
+      </div>
+      <div class="cert-id">Certificate no. {{certificateId}}</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

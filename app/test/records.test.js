@@ -18,19 +18,19 @@ test('ungrouped: one record per row with formatting and built-ins', () => {
   assert.equal(records[0].listCount, null);
 });
 
-const statementFields = [
+const groupedFields = [
   field('contactId', { label: 'Contact Id', required: true }),
   field('contactName', { label: 'Contact Name', required: true }),
   field('projectName', { label: 'Project Name', required: true, inList: true }),
   field('auditedBalance', { label: 'Audited Balance', format: 'currency', required: true, inList: true }),
   field('fundsAwarded', { label: 'Funds Awarded', format: 'currency', inList: true }),
 ];
-const statement = tpl({ name: 'Statement', filename: '{{contactName}} - Statement', groupBy: 'contactId', list: 'funds' }, statementFields);
+const grouped = tpl({ name: 'Statement', filename: '{{contactName}} - Statement', groupBy: 'contactId', list: 'funds' }, groupedFields);
 const row = (contactId, contactName, projectName, auditedBalance, fundsAwarded = null) => ({ contactId, contactName, projectName, auditedBalance, fundsAwarded });
 
 test('grouped: rows sharing groupBy become one record with a list', () => {
   const rows = [row(1, 'Reed', 'A', 100), row(2, 'Harmon', 'B', 200, 5), row(2, 'Harmon', 'C', 300)];
-  const { records } = buildRecords(rows, [2, 3, 4], statement, { today: TODAY });
+  const { records } = buildRecords(rows, [2, 3, 4], grouped, { today: TODAY });
   assert.equal(records.length, 2);
   const harmon = records[1];
   assert.equal(harmon.title, 'Harmon - Statement');
@@ -46,21 +46,21 @@ test('grouped: rows sharing groupBy become one record with a list', () => {
 
 test('group keys ignore number/text differences', () => {
   const rows = [row(243, 'Reed', 'A', 1), row('243', 'Reed', 'B', 2), row('243.0', 'Reed', 'C', 3)];
-  const { records } = buildRecords(rows, [2, 3, 4], statement);
+  const { records } = buildRecords(rows, [2, 3, 4], grouped);
   assert.equal(records.length, 1);
   assert.equal(records[0].listCount, 3);
 });
 
 test('blank groupBy rows are skipped with an issue; fully blank rows silently', () => {
   const rows = [row(null, 'Nobody', 'A', 1), row(null, null, null, null), row(1, 'Reed', 'B', 2)];
-  const { records, issues } = buildRecords(rows, [2, 3, 4], statement);
+  const { records, issues } = buildRecords(rows, [2, 3, 4], grouped);
   assert.equal(records.length, 1);
   assert.deepEqual(issues, ['Row 2: Contact Id is blank, so the row was skipped.']);
 });
 
 test('required blank or unparseable values skip the record with warnings', () => {
   const rows = [row(1, null, 'A', 1), row(2, 'Harmon', 'B', 'lots')];
-  const { records } = buildRecords(rows, [2, 3], statement);
+  const { records } = buildRecords(rows, [2, 3], grouped);
   assert.equal(records[0].skipped, true);
   assert.match(records[0].warnings[0], /Row 2: Contact Name is blank/);
   assert.equal(records[1].skipped, true);
@@ -69,7 +69,7 @@ test('required blank or unparseable values skip the record with warnings', () =>
 
 test('top-level values that differ inside a group warn but still generate', () => {
   const rows = [row(1, 'Reed', 'A', 1), row(1, 'J. Reed', 'B', 2)];
-  const { records } = buildRecords(rows, [2, 3], statement);
+  const { records } = buildRecords(rows, [2, 3], grouped);
   assert.equal(records[0].skipped, false);
   assert.equal(records[0].view.contactName, 'Reed');
   assert.match(records[0].warnings[0], /Contact Name differs/);
@@ -77,7 +77,7 @@ test('top-level values that differ inside a group warn but still generate', () =
 
 test('titles are unique, filesystem-safe, and not HTML-escaped', () => {
   const rows = [row(1, 'A/B', 'X', 1), row(2, 'a/b', 'Y', 1), row(3, 'Smith & Sons', 'Z', 1)];
-  const { records } = buildRecords(rows, [2, 3, 4], statement);
+  const { records } = buildRecords(rows, [2, 3, 4], grouped);
   assert.deepEqual(records.map((r) => r.title), ['AB - Statement', 'ab - Statement (2)', 'Smith & Sons - Statement']);
 });
 
@@ -90,6 +90,6 @@ test('raw dates are ISO day strings', () => {
 
 test('very long numeric ids are never merged by float rounding', () => {
   const rows = [row('12345678901234567891', 'A', 'X', 1), row('12345678901234567892', 'B', 'Y', 1), row('12345678901234567891.0', 'A', 'Z', 1)];
-  const { records } = buildRecords(rows, [2, 3, 4], statement);
+  const { records } = buildRecords(rows, [2, 3, 4], grouped);
   assert.deepEqual(records.map((r) => r.listCount), [2, 1]);
 });

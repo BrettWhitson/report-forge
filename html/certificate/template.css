@@ -1,0 +1,47 @@
+/* ===== Certificate: design tokens (edit these to restyle) ===== */
+:root {
+  --paper: #fbf8f1;
+  --ink: #2b2a33;
+  --gold: #b08d3c;
+  --deep: #23395b;
+  --serif: Georgia, "Times New Roman", serif;
+  --script: "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: "Segoe UI", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { color: var(--ink); font-family: var(--serif); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.certificate { background: var(--paper); padding: 0.4in; }
+
+/* ===== Double frame ===== */
+.frame { height: 100%; border: 3px solid var(--deep); padding: 8px; }
+.inner { position: relative; height: 100%; border: 1.5px solid var(--gold); text-align: center; padding: 0.5in 0.8in 0;
+  background: radial-gradient(ellipse at center, rgba(176, 141, 60, 0.08), transparent 70%); }
+
+/* ===== Text ===== */
+.org { font-family: var(--sans); font-size: 10pt; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); }
+h1 { margin: 14px 0 0; font-size: 40pt; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; color: var(--deep); line-height: 1.05; }
+h1 span { display: block; font-size: 17pt; letter-spacing: 0.35em; color: var(--ink); margin-top: 6px; }
+.presented, .reason { margin: 26px 0 0; font-size: 13pt; font-style: italic; }
+.reason { margin-top: 10px; }
+.recipient { display: inline-block; min-width: 5.5in; margin-top: 8px; padding: 0 24px 6px; border-bottom: 1.5px solid var(--gold);
+  font-family: var(--script); font-size: 36pt; font-style: italic; color: var(--deep); }
+.course { margin-top: 10px; font-size: 19pt; font-weight: 700; color: var(--deep); }
+.details { margin: 8px 0 0; font-family: var(--sans); font-size: 10pt; color: #5d5b66; }
+
+/* ===== Signatures and seal ===== */
+.signatures { position: absolute; left: 0.8in; right: 0.8in; bottom: 0.55in; display: flex; align-items: flex-end; justify-content: space-between; }
+.sig { width: 2.6in; }
+.sig-line { border-top: 1px solid var(--ink); margin-bottom: 6px; }
+.sig-name { font-size: 12pt; font-weight: 700; }
+.sig-role { font-family: var(--sans); font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #5d5b66; }
+.seal { width: 1.25in; height: 1.25in; }
+.cert-id { position: absolute; left: 0; right: 0; bottom: 0.18in; font-family: var(--sans); font-size: 7.5pt; letter-spacing: 0.1em; color: #8a8794; }
+
+/* === Report Forge page setup (managed by the editor) === */
+@page { size: 11in 8.5in; margin: 0; }
+.page { position: relative; width: 11in; height: 8.5in; overflow: hidden; break-after: page; }
+.page:last-of-type { break-after: auto; }
+.page.flow { height: auto; min-height: 8.5in; overflow: visible; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* === end page setup === */

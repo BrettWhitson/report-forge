@@ -12,8 +12,21 @@ const { registerEditorIpc, openEditor, getEditorSession } = require('../main/edi
 const { renderPdf, READY_SCRIPT, getSession } = require('../main/render-pdf');
 const { renderHtml } = require('../lib/render');
 const { loadTemplate } = require('../lib/templates');
+const { readTable } = require('../lib/import');
+const { autoMap, applyMapping } = require('../lib/mapping');
+const { buildRecords } = require('../lib/records');
 
 const ROOT = path.join(__dirname, '..', '..');
+const FIXTURES = path.join(__dirname, '..', 'test', 'fixtures', 'templates');
+const SAMPLE_FILES = { 'invoice': 'sample-data.xlsx', 'certificate': 'sample-data.csv', 'sales-summary': 'sample-data.json', 'event-badge': 'sample-data.csv', 'welcome-letter': 'sample-data.tsv' };
+
+// The first record of an example's own sample data, built the way the app builds it.
+function sampleRecord(dir, file) {
+  const tpl = loadTemplate(dir);
+  const table = readTable(path.join(dir, file));
+  const rows = applyMapping(table.rows, autoMap(table.headers, tpl.fields));
+  return buildRecords(rows, table.rowNumbers, tpl, { today: new Date(2026, 9, 10) }).records[0];
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function until(fn, label, ms = 20000) {
@@ -71,11 +84,14 @@ async function main() {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'report-forge-editor-'));
   const htmlDir = path.join(work, 'html');
   fs.cpSync(path.join(ROOT, 'html'), htmlDir, { recursive: true });
-  const preview = JSON.parse(fs.readFileSync(path.join(__dirname, 'preview-data', 'grouped-report.json'), 'utf8'));
-  const records = {
-    'grouped-report': preview.find((r) => r.name === 'harmon-4-funds'),
-    'simple-letter': { view: { name: 'Ann Lee', city: 'Reno', today: 'October 10, 2026' } },
-  };
+  fs.cpSync(path.join(FIXTURES, 'simple-letter'), path.join(htmlDir, 'simple-letter'), { recursive: true });
+  const sources = { 'simple-letter': path.join(FIXTURES, 'simple-letter') };
+  const records = {};
+  for (const [id, file] of Object.entries(SAMPLE_FILES)) {
+    sources[id] = path.join(ROOT, 'html', id);
+    records[id] = sampleRecord(sources[id], file);
+  }
+  records['simple-letter'] = { view: { name: 'Ann Lee', city: 'Reno', today: 'October 10, 2026' } };
 
   // 1. Save without changes: output must match.
   for (const id of Object.keys(records)) {
@@ -88,13 +104,13 @@ async function main() {
     win.destroy();
     assert.ok(fs.readdirSync(path.join(dir, '.backups')).length >= 1, 'no backup made');
     const saved = fs.readFileSync(path.join(dir, 'template.html'), 'utf8');
-    const original = fs.readFileSync(path.join(ROOT, 'html', id, 'template.html'), 'utf8');
+    const original = fs.readFileSync(path.join(sources[id], 'template.html'), 'utf8');
     assert.equal((saved.match(/<!--/g) || []).length, (original.match(/<!--/g) || []).length, `${id}: comments were lost`);
-    if (id === 'grouped-report') {
-      assert.match(saved, /\{\{#funds\}\}/);
-      assert.match(saved, /<script id="chart-data" type="application\/json">/);
+    if (id === 'sales-summary') {
+      assert.match(saved, /\{\{#reps\}\}/);
       assert.match(saved, /window\.reportReady = new Promise/);
     }
+    if (id === 'event-badge') assert.match(saved, /<section class="page badge type-\{\{ticketType\}\}">/);
     const after = await capture(dir, records[id]);
     assert.equal(after.pages, before.pages, `${id}: page count changed`);
     assert.equal(after.text, before.text, `${id}: text changed`);
@@ -203,10 +219,10 @@ async function main() {
   const external = await js(`[...document.querySelectorAll('link[href], script[src]'), ...window.rfEditor.editor.Canvas.getDocument().querySelectorAll('link[href], script[src]')]
     .map((e) => e.href || e.src).filter((u) => !/^(file|data|blob):/i.test(u))`);
   assert.deepEqual(external, [], `external resources: ${external.join(', ')}`);
-  fs.copyFileSync(path.join(htmlDir, 'grouped-report', 'assets', 'photo.jpg'), path.join(dir, 'probe.jpg'));
+  fs.copyFileSync(path.join(htmlDir, 'certificate', 'assets', 'seal.svg'), path.join(dir, 'probe.svg'));
   const probe = (file) => `new Promise((r) => { const i = new Image(); i.onload = () => r('loaded'); i.onerror = () => r('blocked'); i.src = ${JSON.stringify(require('url').pathToFileURL(file).href)}; })`;
-  assert.equal(await js(probe(path.join(dir, 'probe.jpg'))), 'loaded', 'control image inside the template folder should load');
-  assert.equal(await js(probe(path.join(htmlDir, 'grouped-report', 'assets', 'photo.jpg'))), 'blocked', 'editor loaded a file outside its template folder');
+  assert.equal(await js(probe(path.join(dir, 'probe.svg'))), 'loaded', 'control image inside the template folder should load');
+  assert.equal(await js(probe(path.join(htmlDir, 'certificate', 'assets', 'seal.svg'))), 'blocked', 'editor loaded a file outside its template folder');
   console.log('file scope: OK');
 
   // 8. The editor session itself blocks the network (independent of the page's CSP).

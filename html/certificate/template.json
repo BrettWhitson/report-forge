@@ -1,0 +1,13 @@
+{
+  "name": "Certificate of Completion",
+  "locale": "en-US",
+  "filename": "Certificate - {{recipientName}} - {{courseName}}",
+  "fields": {
+    "recipientName":  { "label": "Recipient Name", "aliases": ["Name", "Student"], "required": true },
+    "courseName":     { "label": "Course Name", "aliases": ["Course"], "required": true },
+    "completionDate": { "label": "Completion Date", "format": "date", "dateFormat": "MMMM d, yyyy", "required": true },
+    "hours":          { "label": "Hours", "format": "number", "decimals": 1 },
+    "instructor":     { "label": "Instructor" },
+    "certificateId":  { "label": "Certificate Id" }
+  }
+}

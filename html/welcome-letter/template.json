@@ -1,0 +1,13 @@
+{
+  "name": "Member Welcome Letter",
+  "locale": "en-US",
+  "filename": "Welcome - {{memberName}} ({{memberId}})",
+  "fields": {
+    "memberName": { "label": "Member Name", "aliases": ["Name"], "required": true },
+    "memberId":   { "label": "Member Id", "aliases": ["Member Number", "Card Number"], "required": true },
+    "street":     { "label": "Street", "aliases": ["Address"] },
+    "town":       { "label": "Town", "aliases": ["City"] },
+    "branch":     { "label": "Branch", "blank": "Central" },
+    "joinDate":   { "label": "Join Date", "format": "date", "dateFormat": "MMMM d, yyyy" }
+  }
+}

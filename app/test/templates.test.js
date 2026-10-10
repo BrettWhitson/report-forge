@@ -27,20 +27,20 @@ test('detectFields reports template errors', () => {
   assert.throws(() => detectFields('{{#items}}'), TemplateError);
 });
 
-test('loads the statement template with manifest settings', () => {
-  const t = loadTemplate(path.join(HTML_DIR, 'grouped-report'));
-  assert.equal(t.id, 'grouped-report');
-  assert.equal(t.name, 'Grouped Report');
-  assert.equal(t.manifest.groupBy, 'contactId');
-  assert.equal(t.manifest.list, 'funds');
+test('loads a grouped template with manifest settings', () => {
+  const t = loadTemplate(path.join(HTML_DIR, 'invoice'));
+  assert.equal(t.id, 'invoice');
+  assert.equal(t.name, 'Invoice');
+  assert.equal(t.manifest.groupBy, 'invoiceNumber');
+  assert.equal(t.manifest.list, 'items');
   const byName = Object.fromEntries(t.fields.map((f) => [f.name, f]));
-  assert.equal(byName.contactName.inList, false);
-  assert.equal(byName.contactName.required, true);
-  assert.equal(byName.auditedBalance.inList, true);
-  assert.equal(byName.auditedBalance.format, 'currency');
-  assert.equal(byName.contactId.inList, false);
-  assert.equal(byName.fundsAwarded.blank, '');
-  assert.equal(byName.projectCode.inList, true);
+  assert.equal(byName.customerName.inList, false);
+  assert.equal(byName.customerName.required, true);
+  assert.equal(byName.amount.inList, true);
+  assert.equal(byName.amount.format, 'currency');
+  assert.equal(byName.invoiceNumber.inList, false);
+  assert.equal(byName.notes.blank, '—');
+  assert.equal(byName.total.inList, false);
 });
 
 test('template without manifest gets defaults; every field is optional text', () => {
