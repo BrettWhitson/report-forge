@@ -12,7 +12,7 @@
     "build:editor": "node scripts/build-editor.js",
     "editor-test": "npm run build:editor && electron scripts/editor-test.js"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "dependencies": {
     "mustache": "^4.2.0",
     "pdf-lib": "^1.17.1",

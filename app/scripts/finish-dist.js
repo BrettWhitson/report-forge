@@ -15,4 +15,5 @@ fs.cpSync(path.join(ROOT, 'html'), path.join(appDir, 'html'), {
   filter: (src) => !/[\\/]_(render|preview)-[^\\/]*\.html$/i.test(src) && !/[\\/]\.backups([\\/]|$)/.test(src) && !/\.rf-tmp-\d+$/.test(src),
 });
 fs.copyFileSync(path.join(__dirname, '..', 'editor', 'dist', 'THIRD_PARTY_NOTICES.txt'), path.join(appDir, 'THIRD_PARTY_NOTICES.txt'));
+fs.copyFileSync(path.join(ROOT, 'LICENSE'), path.join(appDir, 'LICENSE.txt'));
 console.log(`App ready: ${appDir}`);
