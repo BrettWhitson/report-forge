@@ -8,7 +8,7 @@ const path = require('path');
 const assert = require('assert/strict');
 const { app, BrowserWindow } = require('electron');
 const { PDFDocument } = require('pdf-lib');
-const { registerEditorIpc, openEditor } = require('../main/editor-window');
+const { registerEditorIpc, openEditor, getEditorSession } = require('../main/editor-window');
 const { renderPdf, READY_SCRIPT, getSession } = require('../main/render-pdf');
 const { renderHtml } = require('../lib/render');
 const { loadTemplate } = require('../lib/templates');
@@ -140,25 +140,73 @@ async function main() {
   assert.deepEqual(loadTemplate(dir).fields.map((f) => f.name), ['name', 'city']);
   console.log('editor e2e: OK');
 
-  // 3. Invalid Source is refused and kept.
+  // 3. One Ctrl+Z in the canvas undoes exactly one step (GrapesJS re-dispatches canvas keys to the window).
+  await js('void window.rfEditor.addPage(); void window.rfEditor.addPage();');
+  assert.equal(await js('window.rfEditor.pages().length'), 4);
+  await js(`window.rfEditor.editor.Canvas.getDocument().dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }))`);
+  await sleep(600);
+  assert.equal(await js('window.rfEditor.pages().length'), 3, 'one Ctrl+Z must undo exactly one step');
+  await js('window.rfEditor.undo()');
+  console.log('keyboard undo: OK');
+
+  // 4. Text still being typed is saved.
+  await js(`(async () => {
+    const p = window.rfEditor.editor.getWrapper().find('p')[2];
+    window.rfEditor.editor.select(p);
+    await p.getView().onActive({ stopPropagation() {}, preventDefault() {} });
+    p.getEl().innerHTML = 'Thank you for visiting us from {{city}} again.';
+  })()`);
+  assert.equal((await js('window.rfEditor.save()')).ok, true);
+  assert.match(fs.readFileSync(path.join(dir, 'template.html'), 'utf8'), /visiting us from \{\{city\}\} again\./, 'typed text was not saved');
+  console.log('typing committed on save: OK');
+
+  // 5. <head> edits in Source are tracked, saved, and undoable.
   await js('window.rfEditor.enterSource()');
-  await js(`window.rfEditor.setSource('settings', '{ "name": }')`);
+  await js(`window.rfEditor.setSource('html', window.rfEditor.snapshot().before.replace('<title>Simple Letter</title>', '<title>Letter v2</title>') + window.rfEditor.snapshot().body + window.rfEditor.snapshot().after)`);
+  assert.equal(await js('window.rfEditor.leaveSource()'), true);
+  assert.equal(await js('window.rfEditor.isDirty()'), true, 'head-only edit not seen as a change');
+  await js('window.rfEditor.undo()');
+  assert.match(await js('window.rfEditor.snapshot().before'), /<title>Simple Letter<\/title>/, 'undo did not revert the head edit');
+  await js('window.rfEditor.redo()');
+  assert.equal((await js('window.rfEditor.save()')).ok, true);
+  assert.match(fs.readFileSync(path.join(dir, 'template.html'), 'utf8'), /<title>Letter v2<\/title>/);
+  console.log('head edits: OK');
+
+  // 6. Invalid Source is refused and kept, with the right line.
+  await js('window.rfEditor.enterSource()');
+  await js(`window.rfEditor.setSource('settings', '{\\n  "name": "x",\\n}')`);
   assert.equal(await js('window.rfEditor.leaveSource()'), false);
-  assert.match(await js('document.querySelector("#message").textContent'), /SETTINGS, line 1/);
+  assert.match(await js('document.querySelector("#message").textContent'), /SETTINGS, line 3/);
+  await js(`window.rfEditor.setSource('settings', '')`);
+  assert.equal(await js('window.rfEditor.leaveSource()'), true);
   console.log('source validation: OK');
 
-  // 4. Nothing is loaded from outside the app or the template folder.
+  // 7. Nothing outside the app or this template folder can be loaded.
   const external = await js(`[...document.querySelectorAll('link[href], script[src]'), ...window.rfEditor.editor.Canvas.getDocument().querySelectorAll('link[href], script[src]')]
     .map((e) => e.href || e.src).filter((u) => !/^(file|data|blob):/i.test(u))`);
   assert.deepEqual(external, [], `external resources: ${external.join(', ')}`);
-  const outside = await js(`fetch(${JSON.stringify(require('url').pathToFileURL(path.join(ROOT, 'app', 'package.json')).href)}).then(() => 'reached', () => 'blocked')`);
-  assert.equal(outside, 'blocked', 'editor could read a file outside its template folder');
+  fs.copyFileSync(path.join(htmlDir, 'grouped-report', 'assets', 'photo.jpg'), path.join(dir, 'probe.jpg'));
+  const probe = (file) => `new Promise((r) => { const i = new Image(); i.onload = () => r('loaded'); i.onerror = () => r('blocked'); i.src = ${JSON.stringify(require('url').pathToFileURL(file).href)}; })`;
+  assert.equal(await js(probe(path.join(dir, 'probe.jpg'))), 'loaded', 'control image inside the template folder should load');
+  assert.equal(await js(probe(path.join(htmlDir, 'grouped-report', 'assets', 'photo.jpg'))), 'blocked', 'editor loaded a file outside its template folder');
+  console.log('file scope: OK');
 
-  // 5. Network is blocked in the editor window and its canvas.
-  assert.equal(await js(`fetch('https://example.com/').then(() => 'reached', () => 'blocked')`), 'blocked');
-  assert.equal(await js(`window.rfEditor.editor.Canvas.getWindow().fetch('https://example.com/').then(() => 'reached', () => 'blocked')`), 'blocked');
+  // 8. The editor session itself blocks the network (independent of the page's CSP).
+  const sessionFetch = await getEditorSession().fetch('https://example.com/').then(() => 'reached', () => 'blocked');
+  assert.equal(sessionFetch, 'blocked', 'editor session reached the network');
   console.log('network block: OK');
   win.destroy();
+
+  // 9. A template that starts with a section tag keeps it.
+  const leadDir = path.join(htmlDir, 'lead-tag');
+  fs.mkdirSync(leadDir);
+  fs.writeFileSync(path.join(leadDir, 'template.html'), '<!doctype html><html><head></head><body>\n{{#rows}}<section class="page"><p>{{a}}</p></section>{{/rows}}\n</body></html>');
+  const leadWin = await openAndWait(htmlDir, 'lead-tag');
+  assert.equal((await leadWin.webContents.executeJavaScript('window.rfEditor.save()', true)).ok, true);
+  leadWin.destroy();
+  const leadSaved = fs.readFileSync(path.join(leadDir, 'template.html'), 'utf8');
+  assert.match(leadSaved, /<body>\n\{\{#rows\}\}<section class="page"><p>\{\{a\}\}<\/p><\/section>\{\{\/rows\}\}/);
+  console.log('leading section tag: OK');
 
   console.log(`editor-test: PASS (work folder ${work})`);
 }

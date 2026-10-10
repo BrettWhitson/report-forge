@@ -2,7 +2,8 @@
 // Linear undo/redo over whole-template snapshots ({ body, css, settings }).
 
 function sameSnapshot(a, b) {
-  return Boolean(a && b) && a.body === b.body && a.css === b.css && a.settings === b.settings;
+  return Boolean(a && b) && a.body === b.body && a.css === b.css && a.settings === b.settings
+    && (a.before ?? '') === (b.before ?? '') && (a.after ?? '') === (b.after ?? '');
 }
 
 class History {

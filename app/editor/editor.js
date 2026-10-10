@@ -18,7 +18,7 @@ const DESK_CSS = `
   section.page { margin: 0 auto 24px !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); background: #fff; }
   rf-script { display: block; margin: 4px auto; width: 816px; max-width: 100%; padding: 4px 8px; font: 12px/1.4 Arial, sans-serif;
     color: #555; background: #f3f3f3; border: 1px dashed #999; border-radius: 4px; }
-  rf-script::before { content: "Script (edit in Source)"; }
+  rf-script::before { content: "Code block (script or style) — edit in Source"; }
 `;
 
 const state = {
@@ -34,6 +34,7 @@ const state = {
   sourceDirty: false,
   applying: false,
   ignoreUpdatesUntil: 0,
+  saving: false,
   lead: '',
 };
 let editor = null;
@@ -50,11 +51,24 @@ function stripBody(html) {
 }
 
 function snapshot() {
-  return { body: state.lead + model.restore(stripBody(editor.getHtml())), css: state.css, settings: state.settings };
+  return {
+    body: state.lead + model.restore(stripBody(editor.getHtml())),
+    css: state.css,
+    settings: state.settings,
+    before: state.parts.before,
+    after: state.parts.after,
+  };
+}
+
+// Text being typed lives only in the DOM until editing ends; commit it to the model before snapshots.
+async function commitEditing() {
+  const editing = editor && editor.getEditing();
+  const view = editing && editing.getView();
+  if (view && view.disableEditing) await view.disableEditing();
 }
 
 function fullHtml(snap) {
-  return model.joinDocument({ before: state.parts.before, body: snap.body, after: state.parts.after });
+  return model.joinDocument({ before: snap.before ?? state.parts.before, body: snap.body, after: snap.after ?? state.parts.after });
 }
 
 function bundleFrom(snap) {
@@ -115,10 +129,7 @@ function injectCanvas() {
   }
   desk.textContent = DESK_CSS;
   doc.querySelectorAll('[data-rf-style]').forEach(showParkedStyle);
-  if (!doc.rfKeysBound) {
-    doc.addEventListener('keydown', onKeyDown);
-    doc.rfKeysBound = true;
-  }
+  // No keydown listener here: GrapesJS re-dispatches canvas key events to the parent document.
 }
 
 // Leading whitespace/comments are kept outside GrapesJS (it drops them) and re-attached by snapshot().
@@ -129,10 +140,10 @@ function showParkedStyle(el) {
 }
 
 function loadComponents(body) {
-  const { lead, core } = model.splitLead(body);
+  const { lead, core } = model.prepareForEditor(body);
   state.lead = lead;
   state.applying = true;
-  editor.setComponents(model.protect(core));
+  editor.setComponents(core);
   state.applying = false;
 }
 
@@ -142,6 +153,7 @@ function applySnapshot(snap) {
   state.ignoreUpdatesUntil = Date.now() + 400;
   state.css = snap.css;
   state.settings = snap.settings;
+  if (snap.before !== undefined) state.parts = { before: snap.before, body: snap.body, after: snap.after };
   loadComponents(snap.body);
   state.setup = model.parsePageSetup(state.css);
   injectCanvas();
@@ -267,8 +279,9 @@ function setupFromControls() {
 
 // ----- source view -----
 
-function enterSource() {
+async function enterSource() {
   if (state.mode === 'source') return;
+  await commitEditing();
   record();
   const snap = state.history.current();
   source.set('html', fullHtml(snap));
@@ -293,7 +306,13 @@ function selectTab(tab) {
 async function leaveSource() {
   if (state.mode !== 'source') return true;
   const bundle = { html: source.get('html'), css: source.get('css'), settings: source.get('settings') };
-  const problem = await api.validate(bundle);
+  let problem;
+  try {
+    problem = await api.validate(bundle);
+  } catch (err) {
+    showMessage(`Could not check the source: ${err.message}`);
+    return false;
+  }
   if (problem) {
     showMessage(`${problem.message} (${problem.tab.toUpperCase()}, line ${problem.line})`);
     selectTab(problem.tab);
@@ -302,8 +321,8 @@ async function leaveSource() {
   }
   showMessage('');
   if (state.sourceDirty) {
-    state.parts = model.splitDocument(bundle.html);
-    applySnapshot({ body: state.parts.body, css: bundle.css, settings: bundle.settings });
+    const parts = model.splitDocument(bundle.html);
+    applySnapshot({ body: parts.body, css: bundle.css, settings: bundle.settings, before: parts.before, after: parts.after });
   }
   state.sourceDirty = false;
   state.mode = 'visual';
@@ -320,22 +339,33 @@ async function leaveSource() {
 // ----- save, test, undo -----
 
 async function save() {
-  if (!(await leaveSource())) return { ok: false };
-  record();
-  const snap = state.history.current();
-  const result = await api.save(bundleFrom(snap));
-  if (!result.ok) {
-    showMessage(`${result.problem.message} (${result.problem.tab.toUpperCase()}, line ${result.problem.line})`);
+  if (state.saving) return { ok: false };
+  state.saving = true;
+  try {
+    if (!(await leaveSource())) return { ok: false };
+    await commitEditing();
+    record();
+    const snap = state.history.current();
+    const result = await api.save(bundleFrom(snap));
+    if (!result.ok) {
+      showMessage(`${result.problem.message} (${result.problem.tab.toUpperCase()}, line ${result.problem.line})`);
+      return result;
+    }
+    state.saved = snap;
+    showMessage('');
+    updateChrome();
     return result;
+  } catch (err) {
+    showMessage(`Save failed: ${err.message}`);
+    return { ok: false, error: err.message };
+  } finally {
+    state.saving = false;
   }
-  state.saved = snap;
-  showMessage('');
-  updateChrome();
-  return result;
 }
 
 async function testPdf() {
   if (!(await leaveSource())) return;
+  await commitEditing();
   record();
   try {
     await api.testPdf(bundleFrom(state.history.current()));
@@ -344,15 +374,17 @@ async function testPdf() {
   }
 }
 
-function undo() {
+async function undo() {
   if (state.mode === 'source') return;
+  await commitEditing();
   record();
   const snap = state.history.undo();
   if (snap) applySnapshot(snap);
 }
 
-function redo() {
+async function redo() {
   if (state.mode === 'source') return;
+  await commitEditing();
   // A pending edit would be a new branch; recording it first correctly drops redo.
   if (recordTimer) record();
   const snap = state.history.redo();
@@ -363,7 +395,9 @@ function onKeyDown(e) {
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
   if (key === 's') { e.preventDefault(); save(); return; }
-  if (state.mode === 'source' || editor.getEditing()) return; // native undo inside code editors and text editing
+  // Native undo inside code editors, form fields, and text being edited on the canvas.
+  const field = e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+  if (state.mode === 'source' || field || editor.getEditing()) return;
   if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
   if (key === 'y' || (key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
 }
@@ -385,7 +419,8 @@ async function start() {
   state.settings = data.settings;
   state.assetsBase = data.assetsBase;
   state.setup = model.parsePageSetup(state.css);
-  state.lead = model.splitLead(state.parts.body).lead;
+  const prepared = model.prepareForEditor(state.parts.body);
+  state.lead = prepared.lead;
 
   editor = grapesjs.init({
     container: '#gjs',
@@ -396,20 +431,22 @@ async function start() {
     storageManager: false,
     cssIcons: '', // GrapesJS would otherwise load Font Awesome from a CDN
     canvas: { styles: [], scripts: [] },
-    undoManager: { trackSelection: false },
+    undoManager: false, // Report Forge keeps its own snapshot history
     panels: { defaults: [] },
-    keymaps: { defaults: {} },
     protectedCss: '',
     canvasCss: '',
     avoidInlineStyle: true,
-    parser: { optionsHtml: { allowScripts: false, allowUnsafeAttr: true, keepEmptyTextNodes: true } },
+    parser: { optionsHtml: { allowScripts: false, allowUnsafeAttr: true, allowUnsafeAttrValue: true, keepEmptyTextNodes: true } },
     richTextEditor: { actions: ['bold', 'italic', 'link'] },
     plugins: [(ed) => { editor = ed; defineScriptComponent(); }],
-    components: model.protect(model.splitLead(state.parts.body).core),
+    components: prepared.core,
   });
   editor.on('canvas:frame:load', injectCanvas);
   editor.on('component:mount component:update:attributes', (c) => { const el = c.getEl(); if (el && el.getAttribute) showParkedStyle(el); });
   editor.on('load', () => {
+    // Undo/redo shortcuts are handled by onKeyDown against Report Forge's history only.
+    editor.Keymaps.remove('core:undo');
+    editor.Keymaps.remove('core:redo');
     injectCanvas();
     syncSetupControls();
     state.history.push(snapshot());
@@ -440,9 +477,9 @@ async function start() {
   api.onSaveAndClose(async () => { const r = await save(); if (r.ok) api.closeAfterSave(); });
   api.onReload(async () => {
     const fresh = await api.load();
-    state.parts = model.splitDocument(fresh.html);
+    const parts = model.splitDocument(fresh.html);
     state.history = new History();
-    applySnapshot({ body: state.parts.body, css: fresh.css, settings: fresh.settings });
+    applySnapshot({ body: parts.body, css: fresh.css, settings: fresh.settings, before: parts.before, after: parts.after });
     state.history.push(snapshot());
     state.saved = state.history.current();
     updateChrome();

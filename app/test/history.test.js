@@ -43,3 +43,8 @@ test('sameSnapshot compares all three parts', () => {
   assert.equal(sameSnapshot(s('a', 'c', 'j'), s('a', 'c', 'k')), false);
   assert.equal(sameSnapshot(null, s('a')), false);
 });
+
+test('sameSnapshot also compares head and tail parts when present', () => {
+  assert.equal(sameSnapshot({ ...s('a'), before: '<head><title>1</title>', after: '' }, { ...s('a'), before: '<head><title>2</title>', after: '' }), false);
+  assert.equal(sameSnapshot({ ...s('a'), before: 'x', after: 'y' }, { ...s('a'), before: 'x', after: 'y' }), true);
+});

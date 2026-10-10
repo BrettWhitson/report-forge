@@ -21,7 +21,7 @@ function joinDocument({ before, body, after }) {
 
 // Splits HTML into comments, script blocks, other tags, and the text between them, in document order.
 // Comments come first so a comment that mentions "<script>" is never mistaken for a script.
-const TOKEN = /(<!--[\s\S]*?-->)|(<script\b[^>]*>[\s\S]*?<\/script\s*>)|(<[^>]*>)/gi;
+const TOKEN = /(<!--[\s\S]*?-->)|(<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>)|(<[^>]*>)/gi;
 
 function mapTokens(html, onText, onToken) {
   let out = '';
@@ -58,6 +58,13 @@ function protect(body) {
 function splitLead(body) {
   const lead = /^(?:\s|<!--[\s\S]*?-->)*/.exec(body)[0];
   return { lead, core: body.slice(lead.length) };
+}
+
+// Body as the editor needs it: protected, with the leading whitespace/comments (including a leading
+// section marker) split off, because GrapesJS drops comments that come before the first element.
+function prepareForEditor(body) {
+  const { lead, core } = splitLead(protect(body));
+  return { lead: restore(lead), core };
 }
 
 function restore(body) {
@@ -168,6 +175,6 @@ function parsePageSetup(css) {
 }
 
 module.exports = {
-  splitDocument, joinDocument, protect, restore, splitLead, extractHeadStyles, findStylesheet, ensureStylesheetLink,
+  splitDocument, joinDocument, protect, restore, splitLead, prepareForEditor, extractHeadStyles, findStylesheet, ensureStylesheetLink,
   inlineStylesheet, PAPER, pageDimensions, pageSetupCss, parsePageSetup, applyPageSetup,
 };

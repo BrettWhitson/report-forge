@@ -151,3 +151,19 @@ test('restored style attributes survive GrapesJS-style re-serialization', () => 
   const fromEditor = '<svg width="10" class="deco" data-rf-style="left:694px; top:0"><polygon points="1,1"></polygon></svg>';
   assert.equal(m.restore(fromEditor), '<svg width="10" class="deco" style="left:694px; top:0"><polygon points="1,1"></polygon></svg>');
 });
+
+test('prepareForEditor keeps a leading section tag outside the editor and restorable', () => {
+  const body = '\n{{#records}}<section class="page">x</section>{{/records}}\n';
+  const { lead, core } = m.prepareForEditor(body);
+  assert.equal(lead, '\n{{#records}}');
+  assert.match(core, /^<section class="page">x<\/section><!--rf:\{\{\/records\}\}-->/);
+  assert.equal(lead + m.restore(core), body);
+});
+
+test('style blocks inside the body are kept as opaque placeholders', () => {
+  const body = '<p>a</p><style media="print">.x{color:red}</style><p>b</p>';
+  const p = m.protect(body);
+  assert.doesNotMatch(p, /<style/);
+  assert.equal((p.match(/<rf-script /g) || []).length, 1);
+  assert.equal(m.restore(p), body);
+});
