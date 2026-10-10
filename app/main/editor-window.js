@@ -8,6 +8,9 @@ const { BrowserWindow, ipcMain, dialog, session, shell } = require('electron');
 const { readBundle, validateBundle, saveBundle, changedOnDisk, EditorSaveError } = require('./editor-files');
 const { inlineStylesheet } = require('../lib/template-model');
 const { renderPdf } = require('./render-pdf');
+const { isAllowedUrl } = require('../lib/url-scope');
+
+const EDITOR_DIR = path.join(__dirname, '..', 'editor');
 
 const editors = new Map(); // template id -> { win, dir, id, name, cssFile, mtimes, dirty, closing, asking }
 let editorSession = null;
@@ -15,9 +18,12 @@ let editorSession = null;
 function getEditorSession() {
   if (!editorSession) {
     editorSession = session.fromPartition('report-forge-editor');
+    // Editor files and the folders of templates open in an editor; nothing else on disk, nothing on the network.
     editorSession.webRequest.onBeforeRequest((details, callback) => {
-      callback({ cancel: !/^(file|data|blob|devtools):/i.test(details.url) });
+      const roots = [EDITOR_DIR, ...[...editors.values()].map((e) => e.dir)];
+      callback({ cancel: !isAllowedUrl(details.url, roots) });
     });
+    editorSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   }
   return editorSession;
 }
@@ -151,9 +157,13 @@ function openEditor({ htmlDir, id, name }) {
   return win;
 }
 
+function openEditorWindows() {
+  return [...editors.values()].filter((e) => !e.win.isDestroyed()).map((e) => e.win);
+}
+
 function editorWindowFor(id) {
   const entry = editors.get(id);
   return entry && !entry.win.isDestroyed() ? entry.win : undefined;
 }
 
-module.exports = { registerEditorIpc, openEditor, editorWindowFor, getEditorSession };
+module.exports = { registerEditorIpc, openEditor, editorWindowFor, openEditorWindows, getEditorSession };

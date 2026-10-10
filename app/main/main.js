@@ -10,7 +10,7 @@ const { renderPdf } = require('./render-pdf');
 const { createPreviewView } = require('./preview-view');
 const { SUPPORTED_EXTENSIONS } = require('../lib/import');
 const { normalizeTheme } = require('./theme');
-const { registerEditorIpc, openEditor } = require('./editor-window');
+const { registerEditorIpc, openEditor, openEditorWindows } = require('./editor-window');
 
 let win = null;
 let controller = null;
@@ -132,6 +132,19 @@ function createWindow() {
   });
   win.webContents.on('will-navigate', (event) => event.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // Template editors belong to the main window: ask the user to finish with them before it closes.
+  win.on('close', (event) => {
+    const editorsOpen = openEditorWindows();
+    if (!editorsOpen.length) return;
+    event.preventDefault();
+    dialog.showMessageBoxSync(win, {
+      type: 'info',
+      buttons: ['OK'],
+      message: 'A template editor is still open.',
+      detail: 'Close the template editor windows first (you will be asked about unsaved changes), then close Report Forge.',
+    });
+    editorsOpen[0].focus();
+  });
   win.loadFile(path.join(__dirname, '..', 'ui', 'index.html'));
   preview = createPreviewView(win);
 }
