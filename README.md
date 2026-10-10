@@ -98,6 +98,17 @@ npm run dist       # build dist/Report Forge (portable folder)
 
 Releases are built by GitHub Actions: when `version` in `app/package.json` changes on `main`, the workflow tests, builds, zips, and publishes a release.
 
+## Built with
+
+- [Electron](https://www.electronjs.org/): the desktop app shell and the Chromium engine that prints the PDFs (MIT)
+- [Mustache.js](https://github.com/janl/mustache.js): template fields, lists, and conditions (MIT)
+- [SheetJS Community Edition](https://sheetjs.com/): reading Excel and OpenDocument files (Apache-2.0)
+- [pdf-lib](https://pdf-lib.js.org/): combining PDFs into one file (MIT)
+- [GrapesJS](https://grapesjs.com/): the visual template editor (BSD-3-Clause)
+- [CodeMirror](https://codemirror.net/): the Source view code editors (MIT)
+- [esbuild](https://esbuild.github.io/): bundling the editor (MIT)
+- [electron-builder](https://www.electron.build/): packaging the Windows app (MIT)
+
 ## License
 
 [MIT](LICENSE). Third-party licences for bundled libraries are listed in `THIRD_PARTY_NOTICES.txt` in the app folder.
