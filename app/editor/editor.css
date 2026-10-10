@@ -10,6 +10,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
 button, select, input { font: inherit; padding: 4px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--ink); }

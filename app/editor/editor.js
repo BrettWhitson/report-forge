@@ -15,7 +15,7 @@ const DESK_CSS = `
   html { background: #8a8d99; }
   @media (prefers-color-scheme: dark) { html { background: #2b2d33; } }
   body { margin: 0 !important; padding: 24px 0 !important; background: transparent !important; }
-  body > section.page { margin: 0 auto 24px !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); background: #fff; }
+  section.page { margin: 0 auto 24px !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); background: #fff; }
   rf-script { display: block; margin: 4px auto; width: 816px; max-width: 100%; padding: 4px 8px; font: 12px/1.4 Arial, sans-serif;
     color: #555; background: #f3f3f3; border: 1px dashed #999; border-radius: 4px; }
   rf-script::before { content: "Script (edit in Source)"; }
