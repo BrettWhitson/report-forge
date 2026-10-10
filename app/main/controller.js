@@ -144,8 +144,9 @@ function createController({ htmlDir, settings, renderPdf, today }) {
     return generate({ template: s.template, records: chosen, outDir, combine, renderPdf, onProgress });
   }
 
-  function newTemplate(name) {
-    const id = createTemplate(htmlDir, name);
+  function newTemplate(name, { copyFrom } = {}) {
+    if (copyFrom && !listTemplates(htmlDir).some((t) => t.id === copyFrom)) throw new Error(`Unknown template "${copyFrom}".`);
+    const id = createTemplate(htmlDir, name, { copyFrom });
     return selectTemplate(id);
   }
 

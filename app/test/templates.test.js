@@ -91,3 +91,33 @@ test('createTemplate writes a loadable starter template', () => {
   assert.throws(() => createTemplate(root, 'Thank You Letter!'), /already exists/);
   assert.throws(() => createTemplate(root, '***'), /name/);
 });
+
+test('createTemplate can copy an existing template under a new name', () => {
+  const root = tempDir();
+  const src = makeTemplate(root, 'annual', '<p>{{name}}</p>', { name: 'Annual Report', groupBy: 'name' });
+  fs.mkdirSync(path.join(src, 'assets'));
+  fs.writeFileSync(path.join(src, 'assets', 'logo.png'), 'png');
+  fs.writeFileSync(path.join(src, '_render-1.html'), 'temp');
+  const id = createTemplate(root, 'Annual Report 2027', { copyFrom: 'annual' });
+  assert.equal(id, 'annual-report-2027');
+  const t = loadTemplate(path.join(root, id));
+  assert.equal(t.name, 'Annual Report 2027');
+  assert.equal(t.manifest.groupBy, 'name');
+  assert.equal(fs.readFileSync(path.join(root, id, 'assets', 'logo.png'), 'utf8'), 'png');
+  assert.equal(fs.existsSync(path.join(root, id, '_render-1.html')), false);
+  assert.equal(loadTemplate(src).name, 'Annual Report');
+});
+
+test('copying a template without a manifest creates one with the new name', () => {
+  const root = tempDir();
+  makeTemplate(root, 'plain', '<p>{{a}}</p>');
+  const id = createTemplate(root, 'Plain Copy', { copyFrom: 'plain' });
+  const t = loadTemplate(path.join(root, id));
+  assert.equal(t.name, 'Plain Copy');
+  assert.equal(t.html, '<p>{{a}}</p>');
+});
+
+test('copying from an unknown template is an error', () => {
+  const root = tempDir();
+  assert.throws(() => createTemplate(root, 'X', { copyFrom: 'missing' }), /not found/);
+});

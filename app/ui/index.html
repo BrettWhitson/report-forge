@@ -65,6 +65,11 @@
     <form method="dialog">
       <h3>New template</h3>
       <label>Name <input id="new-template-name" autocomplete="off"></label>
+      <fieldset class="start-from">
+        <legend>Start from</legend>
+        <label class="inline"><input type="radio" name="start-from" value="blank" checked> Blank starter</label>
+        <label class="inline" id="copy-option"><input type="radio" name="start-from" value="copy"> Copy of <span id="copy-source-name"></span></label>
+      </fieldset>
       <menu><button value="cancel">Cancel</button><button value="ok" class="primary">Create</button></menu>
     </form>
   </dialog>

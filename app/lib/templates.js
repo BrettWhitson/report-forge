@@ -165,11 +165,26 @@ function slugify(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-function createTemplate(htmlDir, displayName) {
+function copyTemplate(sourceDir, dir, displayName) {
+  fs.cpSync(sourceDir, dir, { recursive: true, filter: (src) => !TEMP_FILE.test(path.basename(src)) });
+  const manifestPath = path.join(dir, 'template.json');
+  const manifest = fs.existsSync(manifestPath) ? readManifest(dir) : {};
+  manifest.name = displayName;
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+// Creates html/<id>/ from the starter, or as a copy of another template when options.copyFrom names one.
+function createTemplate(htmlDir, displayName, { copyFrom } = {}) {
   const id = slugify(displayName);
   if (!id) throw new TemplateError('Template name must contain letters or numbers.');
   const dir = path.join(htmlDir, id);
   if (fs.existsSync(dir)) throw new TemplateError(`A template folder named "${id}" already exists.`);
+  if (copyFrom) {
+    const sourceDir = path.join(htmlDir, copyFrom);
+    if (!fs.existsSync(path.join(sourceDir, 'template.html'))) throw new TemplateError(`Template "${copyFrom}" not found.`);
+    copyTemplate(sourceDir, dir, displayName);
+    return id;
+  }
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'template.html'), STARTER_HTML);
   const manifest = {

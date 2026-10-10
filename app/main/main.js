@@ -90,8 +90,8 @@ function registerIpc() {
     return r.filePaths[0];
   });
   handle('generate', (options) => controller.generate({ ...options, onProgress: (p) => send('rf:progress', p) }));
-  handle('newTemplate', (name) => {
-    const s = controller.newTemplate(name);
+  handle('newTemplate', (name, options = {}) => {
+    const s = controller.newTemplate(String(name), { copyFrom: options.copyFrom ? String(options.copyFrom) : undefined });
     rewatch();
     const dir = controller.state().templateDir;
     if (dir) shell.openPath(dir);

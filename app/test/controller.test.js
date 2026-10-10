@@ -139,3 +139,16 @@ test('outputDir is exposed for opening the folder', () => {
   c.setOutputDir(dir);
   assert.equal(c.status().outputDir, dir);
 });
+
+test('newTemplate can copy the selected template and selects the copy', () => {
+  const root = tempDir();
+  fs.cpSync(path.join(HTML_DIR, 'simple-letter'), path.join(root, 'simple-letter'), { recursive: true });
+  const settings = createSettings(path.join(tempDir(), 's.json'));
+  const c = createController({ htmlDir: root, settings, renderPdf: async () => {} });
+  c.selectTemplate('simple-letter');
+  const s = c.newTemplate('Letter Copy', { copyFrom: 'simple-letter' });
+  assert.equal(s.template.id, 'letter-copy');
+  assert.equal(s.template.name, 'Letter Copy');
+  assert.deepEqual(s.template.fields.map((f) => f.name), ['name', 'city']);
+  assert.deepEqual(s.templates.map((t) => t.id).sort(), ['letter-copy', 'simple-letter']);
+});

@@ -170,12 +170,21 @@ $('#generate-all').addEventListener('click', () => doGenerate(null));
 $('#generate-selected').addEventListener('click', () => doGenerate([...checked]));
 $('#open-output').addEventListener('click', () => run(() => rf.openOutputFolder()));
 $('#open-template-folder').addEventListener('click', () => run(() => rf.openTemplateFolder()));
-$('#new-template').addEventListener('click', () => { $('#new-template-name').value = ''; $('#new-template-dialog').showModal(); syncPreviewBounds(); });
+$('#new-template').addEventListener('click', () => {
+  $('#new-template-name').value = '';
+  const current = status && status.template;
+  $('#copy-option').hidden = !current;
+  $('#copy-source-name').textContent = current ? current.name : '';
+  document.querySelector('input[name="start-from"][value="blank"]').checked = true;
+  $('#new-template-dialog').showModal();
+  syncPreviewBounds();
+});
 $('#summary-dialog').addEventListener('close', syncPreviewBounds);
 $('#new-template-dialog').addEventListener('close', async () => {
   syncPreviewBounds();
   if ($('#new-template-dialog').returnValue !== 'ok') return;
-  const s = await run(() => rf.newTemplate($('#new-template-name').value));
+  const copy = document.querySelector('input[name="start-from"]:checked').value === 'copy' && status.template;
+  const s = await run(() => rf.newTemplate($('#new-template-name').value, copy ? { copyFrom: status.template.id } : {}));
   if (s) { status = s; render(); refreshPreview(); }
 });
 new ResizeObserver(syncPreviewBounds).observe($('#preview-pane'));

@@ -50,3 +50,6 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; ma
 dialog label { display: flex; flex-direction: column; gap: 4px; }
 .ok { color: var(--ok); }
 .err { color: var(--error); }
+.start-from { border: 1px solid var(--line); border-radius: 6px; margin: 12px 0 0; padding: 6px 10px 8px; }
+.start-from legend { color: var(--muted); padding: 0 4px; }
+dialog label.inline { flex-direction: row; align-items: center; gap: 6px; margin-top: 4px; }
