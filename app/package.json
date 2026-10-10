@@ -8,7 +8,7 @@
     "preview": "node scripts/preview.js",
     "render-test": "electron scripts/render-test.js",
     "start": "electron .",
-    "dist": "electron-builder --win portable && node scripts/copy-templates.js"
+    "dist": "electron-builder --win dir && node scripts/finish-dist.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -35,10 +35,10 @@
       "output": "../dist"
     },
     "win": {
-      "target": "portable"
+      "target": "dir"
     },
-    "portable": {
-      "artifactName": "Report Forge ${version}.exe"
-    }
+    "electronLanguages": [
+      "en-US"
+    ]
   }
 }
