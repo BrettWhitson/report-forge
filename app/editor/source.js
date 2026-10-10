@@ -13,6 +13,7 @@ export function createSourceEditors(container, onChange) {
   const dark = window.matchMedia('(prefers-color-scheme: dark)');
   const views = {};
   const themes = {};
+  let quiet = false; // set() loads text; only typing counts as a change
   for (const tab of Object.keys(LANGS)) {
     themes[tab] = new Compartment();
     const host = document.createElement('div');
@@ -28,7 +29,7 @@ export function createSourceEditors(container, onChange) {
           basicSetup,
           LANGS[tab],
           themes[tab].of(dark.matches ? oneDark : []),
-          EditorView.updateListener.of((u) => { if (u.docChanged) onChange(tab); }),
+          EditorView.updateListener.of((u) => { if (u.docChanged && !quiet) onChange(tab); }),
         ],
       }),
     });
@@ -47,7 +48,12 @@ export function createSourceEditors(container, onChange) {
     },
     set(tab, text) {
       const view = views[tab];
-      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+      quiet = true;
+      try {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+      } finally {
+        quiet = false;
+      }
     },
     highlightLine(tab, line) {
       const view = views[tab];

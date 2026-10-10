@@ -185,6 +185,20 @@ async function main() {
   assert.equal(await js('window.rfEditor.leaveSource()'), true);
   console.log('source validation: OK');
 
+  // 6b. Cleared Settings removes template.json; Save in Source stays in Source; opening Source is not a change.
+  assert.equal((await js('window.rfEditor.save()')).ok, true);
+  assert.equal(fs.existsSync(path.join(dir, 'template.json')), false, 'cleared Settings left template.json');
+  await js('window.rfEditor.enterSource()');
+  assert.equal(await js('window.rfEditor.isDirty()'), false, 'opening Source marked the template changed');
+  await js(`window.rfEditor.setSource('css', window.rfEditor.getSource('css') + '\\n.page h1 { color: rgb(4, 5, 6); }')`);
+  assert.equal((await js('window.rfEditor.save()')).ok, true);
+  assert.equal(await js('window.rfEditor.mode()'), 'source', 'Save left Source');
+  assert.match(fs.readFileSync(path.join(dir, 'template.css'), 'utf8'), /rgb\(4, 5, 6\)/);
+  assert.equal(await js('document.querySelector("#add-page").disabled'), true, 'page controls active in Source');
+  assert.equal(await js('window.rfEditor.leaveSource()'), true);
+  assert.equal(await js('document.querySelector("#add-page").disabled'), false);
+  console.log('save in source: OK');
+
   // 7. Nothing outside the app or this template folder can be loaded.
   const external = await js(`[...document.querySelectorAll('link[href], script[src]'), ...window.rfEditor.editor.Canvas.getDocument().querySelectorAll('link[href], script[src]')]
     .map((e) => e.href || e.src).filter((u) => !/^(file|data|blob):/i.test(u))`);
@@ -207,10 +221,31 @@ async function main() {
   fs.writeFileSync(path.join(leadDir, 'template.html'), '<!doctype html><html><head></head><body>\n{{#rows}}<section class="page"><p>{{a}}</p></section>{{/rows}}\n</body></html>');
   const leadWin = await openAndWait(htmlDir, 'lead-tag');
   assert.equal((await leadWin.webContents.executeJavaScript('window.rfEditor.save()', true)).ok, true);
-  leadWin.destroy();
   const leadSaved = fs.readFileSync(path.join(leadDir, 'template.html'), 'utf8');
   assert.match(leadSaved, /<body>\n\{\{#rows\}\}<section class="page"><p>\{\{a\}\}<\/p><\/section>\{\{\/rows\}\}/);
   console.log('leading section tag: OK');
+
+  // 10. Add page goes after the last page and outside the list loop that closes after it.
+  await leadWin.webContents.executeJavaScript('void window.rfEditor.addPage()', true);
+  assert.equal((await leadWin.webContents.executeJavaScript('window.rfEditor.save()', true)).ok, true);
+  leadWin.destroy();
+  assert.match(fs.readFileSync(path.join(leadDir, 'template.html'), 'utf8'), /\{\{\/rows\}\}<section class="page"><\/section>\n<\/body>/);
+  console.log('add page placement: OK');
+
+  // 11. A template without page sections shows as one sheet at paper width.
+  const looseDir = path.join(htmlDir, 'loose');
+  fs.mkdirSync(looseDir);
+  fs.writeFileSync(path.join(looseDir, 'template.html'), '<!doctype html><html><head></head><body><p>{{a}}</p></body></html>');
+  const looseWin = await openAndWait(htmlDir, 'loose');
+  const loose = await looseWin.webContents.executeJavaScript(`(() => {
+    const doc = window.rfEditor.editor.Canvas.getDocument();
+    return { implicit: doc.documentElement.classList.contains('rf-implicit'), width: doc.body.style.width,
+      list: document.querySelector('#page-list').textContent };
+  })()`, true);
+  looseWin.destroy();
+  assert.deepEqual([loose.implicit, loose.width], [true, '8.5in']);
+  assert.match(loose.list, /Whole document/);
+  console.log('implicit page: OK');
 
   console.log(`editor-test: PASS (work folder ${work})`);
 }

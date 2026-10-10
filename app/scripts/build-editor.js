@@ -3,10 +3,24 @@
 // Also writes THIRD_PARTY_NOTICES.txt with the licence of every package that ends up in the bundle.
 const fs = require('fs');
 const path = require('path');
-const esbuild = require('esbuild');
+
+let esbuild;
+try {
+  esbuild = require('esbuild');
+} catch (err) {
+  console.error(`Could not load esbuild (${err.message}).`);
+  console.error('Run "npm install" in the app folder. If npm skipped install scripts, allow the esbuild one with "npm install-scripts approve esbuild" (or reinstall with scripts enabled).');
+  process.exit(1);
+}
 
 const APP = path.resolve(__dirname, '..');
 const OUT = path.join(APP, 'editor', 'dist');
+const REQUIRED = ['editor.js', 'source.js', 'index.html', 'editor.css'];
+const missing = REQUIRED.filter((f) => !fs.existsSync(path.join(APP, 'editor', f)));
+if (missing.length) {
+  console.error(`Editor source files missing from app/editor: ${missing.join(', ')}`);
+  process.exit(1);
+}
 fs.mkdirSync(OUT, { recursive: true });
 
 const result = esbuild.buildSync({
@@ -16,6 +30,7 @@ const result = esbuild.buildSync({
   platform: 'browser',
   target: 'chrome120',
   outfile: path.join(OUT, 'editor.bundle.js'),
+  minify: true,
   legalComments: 'eof',
   metafile: true,
   logLevel: 'warning',
