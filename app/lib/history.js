@@ -8,7 +8,7 @@ function sameSnapshot(a, b) {
 
 class History {
   constructor(limit = 200) {
-    this.limit = limit;
+    this.limit = Math.max(1, Math.floor(Number(limit) || 1));
     this.stack = [];
     this.index = -1;
   }
@@ -16,7 +16,7 @@ class History {
   push(snapshot) {
     if (sameSnapshot(this.current(), snapshot)) return false;
     this.stack = this.stack.slice(0, this.index + 1);
-    this.stack.push(snapshot);
+    this.stack.push(Object.freeze({ ...snapshot }));
     if (this.stack.length > this.limit) this.stack.shift();
     this.index = this.stack.length - 1;
     return true;

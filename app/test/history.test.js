@@ -48,3 +48,36 @@ test('sameSnapshot also compares head and tail parts when present', () => {
   assert.equal(sameSnapshot({ ...s('a'), before: '<head><title>1</title>', after: '' }, { ...s('a'), before: '<head><title>2</title>', after: '' }), false);
   assert.equal(sameSnapshot({ ...s('a'), before: 'x', after: 'y' }, { ...s('a'), before: 'x', after: 'y' }), true);
 });
+
+test('re-pushing the current snapshot after undo keeps the redo step', () => {
+  const h = new History();
+  h.push(s('a')); h.push(s('b'));
+  h.undo();
+  assert.equal(h.push(s('a')), false);
+  assert.equal(h.canRedo(), true);
+  assert.deepEqual(h.redo(), s('b'));
+});
+
+test('the limit still holds after undo then push', () => {
+  const h = new History(3);
+  ['a', 'b', 'c'].forEach((b) => h.push(s(b)));
+  h.undo();
+  h.push(s('d')); h.push(s('e'));
+  assert.deepEqual(h.undo(), s('d'));
+  assert.deepEqual(h.undo(), s('b'));
+  assert.equal(h.undo(), null);
+});
+
+test('a limit below 1 is treated as 1', () => {
+  const h = new History(0);
+  h.push(s('a')); h.push(s('b'));
+  assert.deepEqual(h.current(), s('b'));
+  assert.equal(h.canUndo(), false);
+});
+
+test('stored snapshots cannot be changed afterwards', () => {
+  const h = new History();
+  const snap = s('a');
+  h.push(snap);
+  assert.throws(() => { 'use strict'; h.current().body = 'changed'; });
+});
