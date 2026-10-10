@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline' file:; img-src 'self' file: data: blob:; font-src 'self' file: data:">
+  <title>Edit template</title>
+  <link rel="stylesheet" href="dist/grapes.min.css">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="seg" role="group" aria-label="View">
+      <button id="mode-visual" class="active">Visual</button>
+      <button id="mode-source">Source</button>
+    </div>
+    <label>Page
+      <select id="paper-size">
+        <option value="letter">Letter</option>
+        <option value="legal">Legal</option>
+        <option value="a4">A4</option>
+        <option value="custom">Custom</option>
+      </select>
+    </label>
+    <span id="custom-size" hidden>
+      <input id="custom-width" type="number" min="1" step="0.1" aria-label="Width"> ×
+      <input id="custom-height" type="number" min="1" step="0.1" aria-label="Height">
+      <select id="custom-unit"><option value="in">in</option><option value="mm">mm</option></select>
+    </span>
+    <select id="orientation" aria-label="Orientation">
+      <option value="portrait">Portrait</option>
+      <option value="landscape">Landscape</option>
+    </select>
+    <span class="spacer"></span>
+    <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="redo" title="Redo (Ctrl+Y)">Redo</button>
+    <button id="test-pdf">Test PDF</button>
+    <button id="save" class="primary" title="Save (Ctrl+S)">Save</button>
+  </header>
+  <div id="message" class="message" hidden></div>
+  <main>
+    <aside class="pages">
+      <h2>Pages</h2>
+      <ol id="page-list"></ol>
+      <button id="add-page">+ Add page</button>
+      <button id="convert-pages" hidden>Convert to pages</button>
+    </aside>
+    <section id="visual" class="work"><div id="gjs"></div></section>
+    <section id="source" class="work" hidden>
+      <div class="tabs" role="tablist">
+        <button data-tab="html" class="active">HTML</button>
+        <button data-tab="css">CSS</button>
+        <button data-tab="settings">Settings</button>
+      </div>
+      <div id="source-editors"></div>
+    </section>
+  </main>
+  <script src="dist/editor.bundle.js"></script>
+</body>
+</html>

@@ -45,6 +45,12 @@ function protect(body) {
   );
 }
 
+// GrapesJS drops comments that come before the first element; keep that leading part outside the editor.
+function splitLead(body) {
+  const lead = /^(?:\s|<!--[\s\S]*?-->)*/.exec(body)[0];
+  return { lead, core: body.slice(lead.length) };
+}
+
 function restore(body) {
   return body.replace(MARKER, '$1').replace(PLACEHOLDER, (_m, encoded) => decodeURIComponent(encoded));
 }
@@ -152,6 +158,6 @@ function parsePageSetup(css) {
 }
 
 module.exports = {
-  splitDocument, joinDocument, protect, restore, extractHeadStyles, findStylesheet, ensureStylesheetLink,
+  splitDocument, joinDocument, protect, restore, splitLead, extractHeadStyles, findStylesheet, ensureStylesheetLink,
   inlineStylesheet, PAPER, pageDimensions, pageSetupCss, parsePageSetup, applyPageSetup,
 };

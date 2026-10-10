@@ -130,3 +130,10 @@ test('extractHeadStyles leaves commented-out styles alone', () => {
   assert.equal(r.css, 'a{}');
   assert.equal(r.before, '<head><!-- <style>b{}</style> --></head>');
 });
+
+test('splitLead separates leading whitespace and comments the editor would drop', () => {
+  assert.deepEqual(m.splitLead('\n\n<!-- PAGE 1 -->\n<section>x</section>'), { lead: '\n\n<!-- PAGE 1 -->\n', core: '<section>x</section>' });
+  assert.deepEqual(m.splitLead('<!-- a --> <!-- b --><p>y</p>'), { lead: '<!-- a --> <!-- b -->', core: '<p>y</p>' });
+  assert.deepEqual(m.splitLead('<p>z</p>'), { lead: '', core: '<p>z</p>' });
+  assert.deepEqual(m.splitLead('  only text'), { lead: '  ', core: 'only text' });
+});
