@@ -54,3 +54,16 @@ test('combine option writes "<template name> - Combined.pdf"', async () => {
   assert.equal(path.basename(result.combinedPath), 'Thanks - Combined.pdf');
   assert.ok(fs.existsSync(result.combinedPath));
 });
+
+test('the combined file never overwrites a record whose title matches its name', async () => {
+  const outDir = path.join(tempDir(), 'out');
+  const result = await generate({
+    template,
+    records: [rec('Thanks - Combined'), rec('Bo')],
+    outDir,
+    combine: true,
+    renderPdf: async ({ outPath }) => writeTinyPdf(outPath, 1),
+  });
+  assert.equal(path.basename(result.combinedPath), 'Thanks - Combined (2).pdf');
+  assert.equal(fs.readdirSync(outDir).length, 3);
+});

@@ -17,7 +17,15 @@ function createSettings(file) {
     set(key, value) {
       data[key] = value;
       fs.mkdirSync(path.dirname(file), { recursive: true });
-      fs.writeFileSync(file, JSON.stringify(data, null, 2));
+      // Write a temporary file, then swap it in, so a crash mid-write cannot leave a half-written settings file.
+      const tmp = `${file}.tmp-${process.pid}`;
+      fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+      try {
+        fs.renameSync(tmp, file);
+      } catch (err) {
+        fs.rmSync(tmp, { force: true });
+        throw err;
+      }
     },
   };
 }

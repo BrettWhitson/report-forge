@@ -36,10 +36,11 @@ function cleanValue(value) {
   return value;
 }
 
-function cellValue(cell) {
+// date1904: the workbook counts days from 1904 (older Mac Excel) instead of 1900.
+function cellValue(cell, date1904 = false) {
   if (!cell || cell.v === undefined || cell.v === null || cell.t === 'e') return null;
   if (cell.t === 'n' && cell.z && XLSX.SSF.is_date(cell.z)) {
-    const d = XLSX.SSF.parse_date_code(cell.v);
+    const d = XLSX.SSF.parse_date_code(cell.v, { date1904 });
     return new Date(Date.UTC(d.y, d.m - 1, d.d, d.H, d.M, Math.floor(d.S)));
   }
   if (cell.t === 'd' && cell.v instanceof Date) {
@@ -49,13 +50,13 @@ function cellValue(cell) {
   return cleanValue(cell.v);
 }
 
-function sheetGrid(ws) {
+function sheetGrid(ws, date1904) {
   if (!ws || !ws['!ref']) return { grid: [], firstRow: 1 };
   const range = XLSX.utils.decode_range(ws['!ref']);
   const grid = [];
   for (let r = range.s.r; r <= range.e.r; r += 1) {
     const row = [];
-    for (let c = range.s.c; c <= range.e.c; c += 1) row.push(cellValue(ws[XLSX.utils.encode_cell({ r, c })]));
+    for (let c = range.s.c; c <= range.e.c; c += 1) row.push(cellValue(ws[XLSX.utils.encode_cell({ r, c })], date1904));
     grid.push(row);
   }
   return { grid, firstRow: range.s.r + 1 };
@@ -101,7 +102,8 @@ function readWorkbook(buffer, sheet) {
   }
   const sheets = wb.SheetNames;
   const chosen = sheet && sheets.includes(sheet) ? sheet : sheets[0];
-  const { grid, firstRow } = sheetGrid(wb.Sheets[chosen]);
+  const date1904 = Boolean(wb.Workbook && wb.Workbook.WBProps && wb.Workbook.WBProps.date1904);
+  const { grid, firstRow } = sheetGrid(wb.Sheets[chosen], date1904);
   return { sheets, sheet: chosen, ...gridToTable(grid, firstRow) };
 }
 

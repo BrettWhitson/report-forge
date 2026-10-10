@@ -30,7 +30,9 @@ async function generate({ template, records, outDir, combine = false, renderPdf,
   onProgress({ done: todo.length, total: todo.length });
   let combinedPath = null;
   if (combine && created.length) {
-    combinedPath = path.join(outDir, `${safeFilename(`${template.manifest.name} - Combined`)}.pdf`);
+    // Never reuse a name just written for a record (a record could be titled "<template> - Combined").
+    const used = new Set(created.map((p) => path.basename(p, '.pdf').toLowerCase()));
+    combinedPath = path.join(outDir, `${safeFilename(`${template.manifest.name} - Combined`, used)}.pdf`);
     try {
       await combinePdfs(created, combinedPath);
     } catch (err) {

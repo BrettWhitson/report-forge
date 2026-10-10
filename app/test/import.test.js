@@ -90,3 +90,15 @@ test('unsupported extension and missing file give readable errors', () => {
   assert.throws(() => readTable('x.pdf'), (e) => e instanceof ImportError && /Unsupported file type \.pdf/.test(e.message));
   assert.throws(() => readTable(path.join(tempDir(), 'nope.csv')), (e) => e instanceof ImportError && /not found/.test(e.message));
 });
+
+test('workbooks using the 1904 date system (old Mac Excel) read the right calendar day', () => {
+  const file = path.join(tempDir(), 'mac.xlsx');
+  // 2026-10-10 is serial 46305 in the 1900 system and 46305 - 1462 in the 1904 system.
+  const ws = XLSX.utils.aoa_to_sheet([['When'], [46305 - 1462]]);
+  ws.A2.z = 'yyyy-mm-dd';
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'S');
+  wb.Workbook = { WBProps: { date1904: true } };
+  XLSX.writeFile(wb, file);
+  assert.equal(readTable(file).rows[0].When.toISOString().slice(0, 10), '2026-10-10');
+});
