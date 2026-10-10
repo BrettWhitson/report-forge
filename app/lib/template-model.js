@@ -36,8 +36,9 @@ function restore(body) {
 
 function extractHeadStyles(before) {
   const css = [];
-  const out = before.replace(/<style\b[^>]*>([\s\S]*?)<\/style\s*>\s*/gi, (_m, text) => {
-    css.push(text.trim());
+  const out = before.replace(/<style\b([^>]*)>([\s\S]*?)<\/style\s*>\s*/gi, (_m, attrs, text) => {
+    const media = /\bmedia\s*=\s*["']([^"']+)["']/i.exec(attrs);
+    css.push(media && media[1].trim().toLowerCase() !== 'all' ? `@media ${media[1].trim()} {\n${text.trim()}\n}` : text.trim());
     return '';
   });
   return { before: out, css: css.join('\n\n') };
