@@ -137,3 +137,17 @@ test('splitLead separates leading whitespace and comments the editor would drop'
   assert.deepEqual(m.splitLead('<p>z</p>'), { lead: '', core: '<p>z</p>' });
   assert.deepEqual(m.splitLead('  only text'), { lead: '  ', core: 'only text' });
 });
+
+test('inline style attributes are parked as data-rf-style while editing and restored on save', () => {
+  const body = `<svg class="deco" style="left:694px; top:0" width="10"><polygon points="1,1"/></svg><p style='color:"red"'>{{a}}</p><div>style=plain text</div>`;
+  const p = m.protect(body);
+  assert.doesNotMatch(p, /\sstyle=/);
+  assert.match(p, /<svg class="deco" data-rf-style="left:694px; top:0" width="10">/);
+  assert.match(p, /<div>style=plain text<\/div>/);
+  assert.equal(m.restore(p), body);
+});
+
+test('restored style attributes survive GrapesJS-style re-serialization', () => {
+  const fromEditor = '<svg width="10" class="deco" data-rf-style="left:694px; top:0"><polygon points="1,1"></polygon></svg>';
+  assert.equal(m.restore(fromEditor), '<svg width="10" class="deco" style="left:694px; top:0"><polygon points="1,1"></polygon></svg>');
+});

@@ -99,7 +99,7 @@ async function main() {
     assert.equal(after.pages, before.pages, `${id}: page count changed`);
     assert.equal(after.text, before.text, `${id}: text changed`);
     const ratio = pixelDiffRatio(before.image, after.image);
-    assert.ok(ratio < 0.002, `${id}: ${(ratio * 100).toFixed(3)}% of pixels differ`);
+    assert.ok(ratio < 0.0002, `${id}: ${(ratio * 100).toFixed(3)}% of pixels differ`);
     console.log(`round-trip ${id}: OK (${before.pages} pages, ${(ratio * 100).toFixed(4)}% pixels differ)`);
   }
 

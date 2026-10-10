@@ -37,11 +37,20 @@ function mapTokens(html, onText, onToken) {
 // Scripts become opaque placeholders (never executed or reformatted by the editor).
 // Mustache section tags in text become comment markers so they survive table/list parsing;
 // tags inside attributes and comments are left exactly as written.
+// Inline style attributes are parked as data-rf-style: GrapesJS would otherwise move them into its own
+// stylesheet under generated ids, which the template files never receive.
+const STYLE_ATTR = /(\s)style(\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))/gi;
+const PARKED_STYLE_ATTR = /(\s)data-rf-style(\s*=)/gi;
+
 function protect(body) {
   return mapTokens(
     body,
     (text) => text.replace(SECTION_TAG, (t) => `<!--rf:${t}-->`),
-    (m) => (m[2] ? `<rf-script data-rf-script="${encodeURIComponent(m[2])}"></rf-script>` : m[0]),
+    (m) => {
+      if (m[2]) return `<rf-script data-rf-script="${encodeURIComponent(m[2])}"></rf-script>`;
+      if (m[3] && !m[3].startsWith('</')) return m[3].replace(STYLE_ATTR, '$1data-rf-style$2');
+      return m[0];
+    },
   );
 }
 
@@ -52,7 +61,8 @@ function splitLead(body) {
 }
 
 function restore(body) {
-  return body.replace(MARKER, '$1').replace(PLACEHOLDER, (_m, encoded) => decodeURIComponent(encoded));
+  const unparked = mapTokens(body, (text) => text, (m) => (m[3] ? m[3].replace(PARKED_STYLE_ATTR, '$1style$2') : m[0]));
+  return unparked.replace(MARKER, '$1').replace(PLACEHOLDER, (_m, encoded) => decodeURIComponent(encoded));
 }
 
 function extractHeadStyles(before) {

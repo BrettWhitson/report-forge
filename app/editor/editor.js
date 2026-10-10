@@ -114,6 +114,7 @@ function injectCanvas() {
     doc.head.append(desk);
   }
   desk.textContent = DESK_CSS;
+  doc.querySelectorAll('[data-rf-style]').forEach(showParkedStyle);
   if (!doc.rfKeysBound) {
     doc.addEventListener('keydown', onKeyDown);
     doc.rfKeysBound = true;
@@ -121,6 +122,12 @@ function injectCanvas() {
 }
 
 // Leading whitespace/comments are kept outside GrapesJS (it drops them) and re-attached by snapshot().
+// Inline styles are parked as data-rf-style in the model (see template-model protect); show them on the canvas.
+function showParkedStyle(el) {
+  const parked = el.getAttribute('data-rf-style');
+  if (parked !== null && el.getAttribute('style') !== parked) el.setAttribute('style', parked);
+}
+
 function loadComponents(body) {
   const { lead, core } = model.splitLead(body);
   state.lead = lead;
@@ -401,6 +408,7 @@ async function start() {
     components: model.protect(model.splitLead(state.parts.body).core),
   });
   editor.on('canvas:frame:load', injectCanvas);
+  editor.on('component:mount component:update:attributes', (c) => { const el = c.getEl(); if (el && el.getAttribute) showParkedStyle(el); });
   editor.on('load', () => {
     injectCanvas();
     syncSetupControls();
