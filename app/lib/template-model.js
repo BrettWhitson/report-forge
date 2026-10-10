@@ -94,8 +94,28 @@ function findStylesheet(before) {
   return null;
 }
 
+// Link href as a file name: query/hash removed and %-escapes decoded.
+function cleanHref(href) {
+  const bare = href.split(/[?#]/)[0];
+  try {
+    return decodeURIComponent(bare);
+  } catch {
+    return bare;
+  }
+}
+
+// True when the HTML already links this particular stylesheet (any other link does not count).
+function linksStylesheet(html, cssFile) {
+  const want = cssFile.replace(/\\/g, '/').toLowerCase();
+  return (html.match(/<link\b[^>]*>/gi) || []).some((link) => {
+    if (!/\brel\s*=\s*["']?stylesheet["']?/i.test(link)) return false;
+    const href = link.match(/\bhref\s*=\s*["']([^"']+)["']/i);
+    return Boolean(href) && cleanHref(href[1]).replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase() === want;
+  });
+}
+
 function ensureStylesheetLink(before, cssFile) {
-  if (findStylesheet(before)) return before;
+  if (linksStylesheet(before, cssFile)) return before;
   if (/<\/head>/i.test(before)) return before.replace(/<\/head>/i, `  <link rel="stylesheet" href="${cssFile}">\n</head>`);
   return `<link rel="stylesheet" href="${cssFile}">\n${before}`;
 }
@@ -175,6 +195,6 @@ function parsePageSetup(css) {
 }
 
 module.exports = {
-  splitDocument, joinDocument, protect, restore, splitLead, prepareForEditor, extractHeadStyles, findStylesheet, ensureStylesheetLink,
+  splitDocument, joinDocument, protect, restore, splitLead, prepareForEditor, extractHeadStyles, cleanHref, linksStylesheet, findStylesheet, ensureStylesheetLink,
   inlineStylesheet, PAPER, pageDimensions, pageSetupCss, parsePageSetup, applyPageSetup,
 };

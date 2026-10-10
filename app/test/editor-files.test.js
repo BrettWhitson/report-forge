@@ -182,3 +182,31 @@ test('pruning never deletes the backup just made or unrelated folders', () => {
   assert.ok(fs.existsSync(late.backupDir), 'backup from a clock set backwards was deleted');
   assert.ok(fs.existsSync(path.join(dir, '.backups', '!original')));
 });
+
+test('a bare fragment template reopens with its stylesheet and does not gain extra links', () => {
+  const dir = tpl({ 'template.html': '<p>{{a}}</p>' });
+  let b = readBundle(dir);
+  saveBundle(dir, { html: b.html, css: 'p{color:blue}', settings: '' }, b.cssFile, { now: new Date(2026, 9, 10, 9, 0, 0) });
+  b = readBundle(dir);
+  assert.equal(b.cssFile, 'template.css');
+  assert.equal(b.css, 'p{color:blue}');
+  saveBundle(dir, { html: b.html, css: 'p{color:green}', settings: '' }, b.cssFile, { now: new Date(2026, 9, 10, 9, 0, 1) });
+  const html = fs.readFileSync(path.join(dir, 'template.html'), 'utf8');
+  assert.equal((html.match(/<link /g) || []).length, 1);
+  assert.equal(fs.existsSync(path.join(dir, 'template-1.css')), false);
+});
+
+test('inline styles moved out of a template with an outside stylesheet link stay linked', () => {
+  const root = tempDir();
+  const dir = path.join(root, 'a', 'tpl');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(root, 'a', 'shared.css'), 'p{shared:1}');
+  fs.writeFileSync(path.join(dir, 'template.html'), doc('<link rel="stylesheet" href="../shared.css"><style>p{own:1}</style>', '<p>x</p>'));
+  const b = readBundle(dir);
+  assert.equal(b.css, 'p{own:1}');
+  saveBundle(dir, b, b.cssFile);
+  const html = fs.readFileSync(path.join(dir, 'template.html'), 'utf8');
+  assert.match(html, /href="\.\.\/shared\.css"/);
+  assert.match(html, /<link rel="stylesheet" href="template.css">/);
+  assert.equal(fs.readFileSync(path.join(dir, 'template.css'), 'utf8'), 'p{own:1}');
+});

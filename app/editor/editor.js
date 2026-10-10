@@ -35,6 +35,7 @@ const state = {
   applying: false,
   ignoreUpdatesUntil: 0,
   saving: false,
+  inputPending: false,
   lead: '',
 };
 let editor = null;
@@ -76,7 +77,7 @@ function bundleFrom(snap) {
 }
 
 function isDirty() {
-  return state.sourceDirty || !sameSnapshot(state.history.current(), state.saved);
+  return state.sourceDirty || state.inputPending || !sameSnapshot(state.history.current(), state.saved);
 }
 
 function updateChrome() {
@@ -89,6 +90,7 @@ function record() {
   clearTimeout(recordTimer);
   recordTimer = null;
   if (state.applying || !editor) return;
+  if (!editor.getEditing()) state.inputPending = false; // typing is in the snapshot once editing has ended
   state.history.push(snapshot());
   renderPages();
   updateChrome();
@@ -456,6 +458,12 @@ async function start() {
     window.rfEditor.ready = true;
   });
   editor.on('update', scheduleRecord);
+  // Typing only reaches the model when text editing ends; mark the template changed as soon as a key lands,
+  // so closing the window asks about unsaved changes.
+  editor.on('component:input', () => {
+    state.inputPending = true;
+    api.setDirty(true).catch(() => {});
+  });
   editor.on('component:selected component:deselected', renderPages);
 
   source = createSourceEditors($('#source-editors'), () => { state.sourceDirty = true; updateChrome(); });

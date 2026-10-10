@@ -71,7 +71,8 @@ test('findStylesheet finds the first relative stylesheet in either attribute ord
 test('ensureStylesheetLink adds a link before </head>, or prepends for fragments', () => {
   assert.equal(m.ensureStylesheetLink('<head></head><body>', 'template.css'), '<head>  <link rel="stylesheet" href="template.css">\n</head><body>');
   assert.equal(m.ensureStylesheetLink('', 'template.css'), '<link rel="stylesheet" href="template.css">\n');
-  assert.equal(m.ensureStylesheetLink('<link rel="stylesheet" href="r.css">', 'template.css'), '<link rel="stylesheet" href="r.css">');
+  assert.equal(m.ensureStylesheetLink('<head><link rel="stylesheet" href="template.css?v=2"></head>', 'template.css'), '<head><link rel="stylesheet" href="template.css?v=2"></head>');
+  assert.equal(m.ensureStylesheetLink('<head><link rel="stylesheet" href="r.css"></head>', 'template.css'), '<head><link rel="stylesheet" href="r.css">  <link rel="stylesheet" href="template.css">\n</head>');
 });
 
 test('inlineStylesheet swaps the link for a style block', () => {

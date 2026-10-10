@@ -155,7 +155,11 @@ async function main() {
     window.rfEditor.editor.select(p);
     await p.getView().onActive({ stopPropagation() {}, preventDefault() {} });
     p.getEl().innerHTML = 'Thank you for visiting us from {{city}} again.';
+    p.getEl().dispatchEvent(new Event('input', { bubbles: true }));
   })()`);
+  await sleep(200);
+  assert.equal(await js('window.rfEditor.isDirty()'), true, 'typing did not mark the template changed');
+  assert.ok(win.getTitle().startsWith('•'), `window title not marked unsaved: ${win.getTitle()}`);
   assert.equal((await js('window.rfEditor.save()')).ok, true);
   assert.match(fs.readFileSync(path.join(dir, 'template.html'), 'utf8'), /visiting us from \{\{city\}\} again\./, 'typed text was not saved');
   console.log('typing committed on save: OK');

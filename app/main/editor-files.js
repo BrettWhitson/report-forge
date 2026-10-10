@@ -2,7 +2,7 @@
 // Read, validate, and save a template's editable files (template.html, stylesheet, template.json).
 const fs = require('fs');
 const path = require('path');
-const { splitDocument, joinDocument, extractHeadStyles, findStylesheet, ensureStylesheetLink } = require('../lib/template-model');
+const { splitDocument, joinDocument, extractHeadStyles, findStylesheet, ensureStylesheetLink, cleanHref } = require('../lib/template-model');
 const { detectFields, FORMATS } = require('../lib/templates');
 
 const BACKUPS = '.backups';
@@ -34,15 +34,6 @@ function stylesheetProblem(dir, cssFile) {
   return null;
 }
 
-function cleanHref(href) {
-  const bare = href.split(/[?#]/)[0];
-  try {
-    return decodeURIComponent(bare);
-  } catch {
-    return bare;
-  }
-}
-
 function freeStylesheetName(dir) {
   for (let n = 0; ; n += 1) {
     const name = n === 0 ? 'template.css' : `template-${n}.css`;
@@ -62,7 +53,8 @@ function mtimesFor(dir, cssFile) {
 function readBundle(dir) {
   const raw = readText(path.join(dir, 'template.html')) || '';
   const parts = splitDocument(raw);
-  const href = findStylesheet(parts.before);
+  // A bare fragment (no <body>) has its stylesheet link at the top of the content itself.
+  const href = findStylesheet(parts.before || raw);
   const linked = href ? cleanHref(href) : null;
   if (linked && !stylesheetProblem(dir, linked)) {
     // A stylesheet is linked: inline <style> blocks stay where they are (their order relative to the link matters).
@@ -193,8 +185,11 @@ function saveBundle(dir, bundle, cssFile, { now = new Date(), keep = 20 } = {}) 
   const cssProblem = stylesheetProblem(dir, cssFile);
   if (cssProblem) throw new Error(`Stylesheet "${cssFile}" is ${cssProblem}.`);
 
+  // Link this template's own stylesheet unless it is already linked (another stylesheet link does not count).
   const parts = splitDocument(bundle.html);
-  const html = joinDocument({ ...parts, before: ensureStylesheetLink(parts.before, cssFile) });
+  const html = parts.before
+    ? joinDocument({ ...parts, before: ensureStylesheetLink(parts.before, cssFile) })
+    : ensureStylesheetLink(bundle.html, cssFile);
   const f = filesFor(dir, cssFile);
   // Order matters: the stylesheet and settings land before template.html, which is what points at them.
   const writes = [[f.css, bundle.css]];
