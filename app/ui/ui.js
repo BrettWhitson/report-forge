@@ -188,4 +188,6 @@ document.addEventListener('drop', (e) => {
 });
 rf.onProgress((p) => { const bar = $('#progress'); bar.max = Math.max(p.total, 1); bar.value = p.done; });
 rf.onChanged(refresh);
+$('#theme-select').addEventListener('change', (e) => run(() => rf.setTheme(e.target.value)));
+rf.getTheme().then((t) => { $('#theme-select').value = t; }).catch(() => {});
 refresh();

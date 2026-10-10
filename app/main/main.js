@@ -2,17 +2,19 @@
 // Electron entry point: window, IPC bridge to the controller, file watchers.
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, dialog, shell, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, session, nativeTheme } = require('electron');
 const { resolveHtmlDir } = require('./paths');
 const { createSettings } = require('./settings');
 const { createController } = require('./controller');
 const { renderPdf } = require('./render-pdf');
 const { createPreviewView } = require('./preview-view');
 const { SUPPORTED_EXTENSIONS } = require('../lib/import');
+const { normalizeTheme } = require('./theme');
 
 let win = null;
 let controller = null;
 let preview = null;
+let settings = null;
 let watchers = [];
 
 function send(channel, payload) {
@@ -99,6 +101,13 @@ function registerIpc() {
     const dir = controller.state().templateDir || controller.status().htmlDir;
     return shell.openPath(dir);
   });
+  handle('getTheme', () => normalizeTheme(settings.get('theme', 'system')));
+  handle('setTheme', (value) => {
+    const theme = normalizeTheme(value);
+    nativeTheme.themeSource = theme; // drives prefers-color-scheme in the UI and the native title bar
+    settings.set('theme', theme);
+    return theme;
+  });
   handle('openOutputFolder', () => {
     const dir = controller.status().outputDir;
     if (!dir) throw new Error('Choose an output folder first.');
@@ -136,7 +145,8 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     callback({ cancel: !/^(file|data|blob|devtools):/i.test(details.url) });
   });
-  const settings = createSettings(path.join(app.getPath('userData'), 'settings.json'));
+  settings = createSettings(path.join(app.getPath('userData'), 'settings.json'));
+  nativeTheme.themeSource = normalizeTheme(settings.get('theme', 'system'));
   controller = createController({ htmlDir, settings, renderPdf });
   const templates = controller.listTemplates();
   const last = settings.get('lastTemplate', null);
